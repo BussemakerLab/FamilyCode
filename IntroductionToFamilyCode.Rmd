@@ -180,6 +180,29 @@ print(paste0('Grouped R^2 = ', groupedR2(WTdf$Exp, WTdf$HT)))
 print(paste0('RMSD = ', RMSD(WTdf$HT,WTdf$Exp)))
 ```
 
+### Check descrepency between WT and mutant sampels
+Examine how much the WT results explains the mutants. This regression R^2 shoudl be low. 
+```{r}
+#Create Mutdf
+Mutdf <- data.frame(Exp = c(frequency2ddG(getMatrix(SELEX_motifs, 'H5_pb')$matrix)[,'P-1'], 
+                          frequency2ddG(getMatrix(SELEX_motifs, 'H13_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'HD_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'A5_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'A13_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'AD_pb')$matrix)[,'P-1']), 
+                   Pred = c(frequency2ddG(getMatrix(SELEX_motifs, 'HWT_pb')$matrix)[,'P-1'],
+                            frequency2ddG(getMatrix(SELEX_motifs, 'HWT_pb')$matrix)[,'P-1'],
+                            frequency2ddG(getMatrix(SELEX_motifs, 'HWT_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'AWT_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'AWT_pb')$matrix)[,'P-1'],
+                          frequency2ddG(getMatrix(SELEX_motifs, 'AWT_pb')$matrix)[,'P-1']))
+#plot Predicted vs. Experimental
+plot(Mutdf$Exp, Mutdf$Pred,  col = c(rep(1, nrow(Mutdf)/2), rep(2,nrow(Mutdf)/2)), pch = 19, xlab = 'Experiment ddG', ylab = 'Predicted ddG', main = 'Mutants vs. Mutants')
+legend( x = "bottomright", legend = c('HES2', 'ASCL2'), col =c(1:2), pch = 19, bty='n')
+print(paste0('Grouped R^2 = ', groupedR2(Mutdf$Exp, Mutdf$Pred)))
+print(paste0('RMSD = ', RMSD(Mutdf$Pred,Mutdf$Exp)))
+```
+
 ### Predict binding matrix at P-1
 ```{r}
 #create dddGList with database
@@ -196,8 +219,8 @@ colnames(PredDt) <- c('H5', 'H13', 'HD', 'A5', 'A13', 'AD')
 ```
 
 ### Checking prediction accuracy with experimental values of HES2 and ASCL2 mutants
+Examine how well the predicted ddG motif matrices explain the Experimental motifs.
 ```{r}
-#Create Mutdf
 Mutdf <- data.frame(Exp = c(frequency2ddG(getMatrix(SELEX_motifs, 'H5_pb')$matrix)[,'P-1'], 
                           frequency2ddG(getMatrix(SELEX_motifs, 'H13_pb')$matrix)[,'P-1'],
                           frequency2ddG(getMatrix(SELEX_motifs, 'HD_pb')$matrix)[,'P-1'],
@@ -211,6 +234,7 @@ legend( x = "bottomright", legend = c('HES2', 'ASCL2'), col =c(1:2), pch = 19, b
 print(paste0('Grouped R^2 = ', groupedR2(Mutdf$Exp, Mutdf$Pred)))
 print(paste0('RMSD = ', RMSD(Mutdf$Pred,Mutdf$Exp)))
 ```
+
 
 ## Full sequence prediction
 
@@ -293,6 +317,38 @@ legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue'
 print(paste0('Grouped R^2 = ', groupedR2(CSpred$pred, CSpred$true)))
 print(paste0('RMSD = ', RMSD(CSpred$pred,CSpred$true)))
 ```
+## SVD prediction for single and double mutants
+Applying the SVD-regression model to predict the binding motifs of the single and double mutants of HES2 and ASCL2. The key Position used are the mutated positions, and the number of positions to use for each PC is infered from the line plot of Principle Componant-AA position Association.
+```{r}
+train_motifs <- mono_motifs
+test_motifs <- SELEX_motifs[-c(1,5)]
+train_alignment <- matchAliMotif(train_motifs, bHLH_pbAlignment)
+test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c(
+                             '-KSLRPLLEKRRRARINQSLSQLKGLI-L------PLLGRENS--NCSKLEKADVL',
+                             '-KSLKPLLEKRRVARINQSLSQLKGLI-L------PLLGRENS--NCSKLEKADVL',
+                             '-KSLRPLLEKRRVARINQSLSQLKGLI-L------PLLGRENS--NCSKLEKADVL',
+                             '-VARKNERERNRVKLVNLGFQALRQHV-P------HGG-------ASKKLSKVETL',
+                             '-VARRNERERNRRKLVNLGFQALRQHV-P------HGG-------ASKKLSKVETL',
+                             '-VARKNERERNRRKLVNLGFQALRQHV-P------HGG-------ASKKLSKVETL')
+                             )
+#Train svd-regression model
+svd <- matrixSVD(gene2pos(train_motifs, pos = 'P-1'))
+svdModel <- trainSVD(svd, train_alignment, no.keyPos = c(2,1,0), keyPos = list(c(13,5), c(13,13), c(13,13)))
+#Predict binding motifs for test set
+pred_motifs <- predict(svdModel, test_alignment, zero = 0.001)
+#Comparing between true and predicted testing set motifs 
+true <- frequency2ddG(gene2pos(test_motifs, pos = 'P-1'))
+pred <- frequency2ddG(pred_motifs)
+predTrue <- data.frame(true = unlist(as.numeric(true)), pred = unlist(as.numeric(pred)))
+
+#Plot results
+plot(true,pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'))
+legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
+print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
+print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
+```
+
+
 
 ## AA property association with PC values
 Screening the association between the biophysical properties of amino acids and PC values from the SVD tranformation. 
