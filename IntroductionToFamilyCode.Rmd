@@ -10,7 +10,6 @@ output: html_notebook
 ```{r}
 devtools::install_github('ShaoxunLiu/FCpackage')
 library(FamilyCode)
-setwd('PATH_to_REPO')
 ```
 
 ### Input data sets
@@ -342,7 +341,7 @@ pred <- frequency2ddG(pred_motifs)
 predTrue <- data.frame(true = unlist(as.numeric(true)), pred = unlist(as.numeric(pred)))
 
 #Plot results
-plot(true,pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'))
+plot(true,pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction on mutants', col = c('green','blue','orange','red'))
 legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
 print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
 print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
