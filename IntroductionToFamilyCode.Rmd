@@ -19,7 +19,7 @@ setwd('PATH_to_REPO')
 2: bHLH_info: CSV table containing experiment information. 3: bHLH_ali: Alignment file
 
 ```{r}
-proBound_runDIR <- 'results_for_publication/'
+proBound_runDIR <- 'HTdata/'
 bHLH_info <- read.csv(file = "bHLH_info.csv", row.names = 1)
 bHLH_ali <- read.table("bHLH_pb.sto.stockholm", quote="\"", fill = T)
 ```
@@ -156,7 +156,7 @@ Predicting the binding motif of ASCL2 R5K, V13R, R5K+V13R, and HES2 K5R, R13V, K
 
 ```{r}
 groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
-SELEXFile_Template <- 'E:/Desktop/RM_Rotation_3/SELEX_12212022/$modelFile$/fit.models.consensus.json'
+SELEXFile_Template <- 'SELEXdata/$modelFile$/fit.models.consensus.json'
 SELEX_info <- data.frame(gene_symbol = groups, study = 'pb')
 SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'NCANNTGN', pos_index = c('P-4','P-3','P-2','P-1','P1','P2','P3', 'P4'), checkSymmetry = T, withTable = F, useMode = c(1,2,1,1,1,1,1,1))
 #Create posMatrix at P-1
