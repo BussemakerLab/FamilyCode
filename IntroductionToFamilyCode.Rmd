@@ -8,7 +8,9 @@ output: html_notebook
 ### Instal family code package
 
 ```{r}
+devtools::install_github('ShaoxunLiu/FCpackage')
 library(FamilyCode)
+setwd('PATH_to_REPO')
 ```
 
 ### Input data sets
@@ -17,9 +19,9 @@ library(FamilyCode)
 2: bHLH_info: CSV table containing experiment information. 3: bHLH_ali: Alignment file
 
 ```{r}
-proBound_runDIR <- 'E:\\Desktop\\HB_Rotation_1\\ProBound_run\\results_for_publication\\'
-bHLH_info <- read.csv(file = "E:/Desktop/HB_Rotation_1/Base_Shape_rec/bHLH_info.csv", row.names = 1)
-bHLH_ali <- read.table("E:/Desktop/HB_Rotation_1/Base_Shape_rec/bHLH_pb.sto.stockholm", quote="\"", fill = T)
+proBound_runDIR <- 'results_for_publication/'
+bHLH_info <- read.csv(file = "bHLH_info.csv", row.names = 1)
+bHLH_ali <- read.table("bHLH_pb.sto.stockholm", quote="\"", fill = T)
 ```
 
 ### Preparing variables for subsequent processes
@@ -231,14 +233,14 @@ legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 1.5, col =c('re
 ###Build SVD-regression model
 ```{r}
 #separate train and test
-t <- c(11:20)
+t <- c(50)
 train_motifs <- mono_motifs[-t]
 test_motifs <- mono_motifs[t]
 train_alignment <- matchAliMotif(train_motifs, bHLH_pbAlignment)
 test_alignment <- matchAliMotif(test_motifs, bHLH_pbAlignment)
 #Train svd-regression model
 svd <- matrixSVD(gene2pos(train_motifs, pos = 'P-1'))
-svdModel <- trainSVD(svd, train_alignment, no.keyPos = c(4,3,2))
+svdModel <- trainSVD(svd, train_alignment)
 #Predict binding motifs for test set
 pred_motifs <- predict(svdModel, test_alignment, zero = 0.001)
 #Comparing between true and predicted testing set motifs 
@@ -264,7 +266,7 @@ for(t in 1:length(mono_motifs)){
   test_alignment <- matchAliMotif(test_motifs, bHLH_pbAlignment)
   #Train svd-regression model
   svd <- matrixSVD(gene2pos(train_motifs, pos = 'P-1'))
-  svdModel <- trainSVD(svd, train_alignment, no.keyPos = c(3,3,3))
+  svdModel <- trainSVD(svd, train_alignment)
   #Predict binding motifs for test set
   pred_motifs <- predict(svdModel, test_alignment, zero = 0.01)
   #Comparing between true and predicted testing set motifs 
