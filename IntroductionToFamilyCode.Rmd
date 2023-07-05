@@ -60,7 +60,7 @@ Reads in all data of bHLH samples and compares the consensus sequence recognitio
 ```{r}
 Motif_Table <- loadMono_motifs(bHLH_index, modelFile_Template, rec_seq = 'CANNTG', pos_index = c('P-3','P-2','P-1','P1','P2','P3'), checkSymmetry = T, withTable = T)
 
-mono_motifs <- Motif_Table$motifs
+all_mono_motifs <- Motif_Table$motifs
 bHLH_model_info <- Motif_Table$table
 ```
 
@@ -80,7 +80,7 @@ Obtaining baseline experimental accuracy with pair-wise comparison between input
 
 The accuracy of prediction models are measured in grouped R^2 and RMSD. Grouped R^2 reports the mean of R^2 values of regressions between a true and a predicted motif in ddG measurement. RMSD reports the pair-wise Root Mean Squared Difference
 ```{r}
-BaseLines <- getBaseLineAccuracy(mono_motifs, pos = 'P-1', randomSample = F)
+BaseLines <- getBaseLineAccuracy(all_mono_motifs, pos = 'P-1', randomSample = F)
 
 plot(BaseLines$HT1,BaseLines$HT2, pch = 19, xlab = 'Experiment 1 ddG', ylab = 'Experiment 2 ddG', main = 'Pair-wise experiment comparison', col = c('green','blue','orange','red'))
 legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
