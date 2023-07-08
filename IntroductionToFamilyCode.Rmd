@@ -77,7 +77,8 @@ For a different sample set, likely a different family, You can start from this p
 
 Obtaining baseline experimental accuracy with pair-wise comparison between input models of the same sample. Only do this when there are multiple instances of multiple models from different studies performed on the same protein sample.
 
-The accuracy of prediction models are measured in grouped R^2 and RMSD. Grouped R^2 reports the mean of R^2 values of regressions between a true and a predicted motif in ddG measurement. RMSD reports the pair-wise Root Mean Squared Difference
+The accuracy of prediction models are measured in grouped R\^2 and RMSD. Grouped R\^2 reports the mean of R\^2 values of regressions between a true and a predicted motif in ddG measurement. RMSD reports the pair-wise Root Mean Squared Difference
+
 ```{r}
 BaseLines <- getBaseLineAccuracy(all_mono_motifs, pos = 'P-1', randomSample = F)
 
@@ -167,7 +168,9 @@ plot_tetrahedron(posMatix, label = T, color = F)
 ```
 
 ### Examine base-line accuracy
+
 Examine base-line accuracy between SELEX experiment of this study and HT-SELEX experiment in database
+
 ```{r}
 WTdf <- data.frame(HT = c(frequency2ddG(getMatrix(mono_motifs, 'HES2_Yin2017')$matrix)[,'P-1'], 
                           frequency2ddG(getMatrix(mono_motifs, 'ASCL2_Yin2017')$matrix)[,'P-1']), 
@@ -181,7 +184,9 @@ print(paste0('RMSD = ', RMSD(WTdf$HT,WTdf$Exp)))
 ```
 
 ### Check descrepency between WT and mutant sampels
-Examine how much the WT results explains the mutants. This regression R^2 shoudl be low. 
+
+Examine how much the WT results explains the mutants. This regression R\^2 shoudl be low.
+
 ```{r}
 #Create Mutdf
 Mutdf <- data.frame(Exp = c(frequency2ddG(getMatrix(SELEX_motifs, 'H5_pb')$matrix)[,'P-1'], 
@@ -204,6 +209,7 @@ print(paste0('RMSD = ', RMSD(Mutdf$Pred,Mutdf$Exp)))
 ```
 
 ### Predict binding matrix at P-1
+
 ```{r}
 #create dddGList with database
 dddGList <- form.dddGList(bHLH_pbAlignment, mono_motifs, keyPos = c(5,13), posMotif = 'P-1')
@@ -219,7 +225,9 @@ colnames(PredDt) <- c('H5', 'H13', 'HD', 'A5', 'A13', 'AD')
 ```
 
 ### Checking prediction accuracy with experimental values of HES2 and ASCL2 mutants
+
 Examine how well the predicted ddG motif matrices explain the Experimental motifs.
+
 ```{r}
 Mutdf <- data.frame(Exp = c(frequency2ddG(getMatrix(SELEX_motifs, 'H5_pb')$matrix)[,'P-1'], 
                           frequency2ddG(getMatrix(SELEX_motifs, 'H13_pb')$matrix)[,'P-1'],
@@ -235,11 +243,12 @@ print(paste0('Grouped R^2 = ', groupedR2(Mutdf$Exp, Mutdf$Pred)))
 print(paste0('RMSD = ', RMSD(Mutdf$Pred,Mutdf$Exp)))
 ```
 
-
 ## Full sequence prediction
 
 ### Generate SVD matrices
+
 Screen SVD results with the whole training set
+
 ```{r}
 posMatrix <- gene2pos(mono_motifs, pos = 'P-1')
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
@@ -255,6 +264,7 @@ legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 1.5, col =c('re
 ```
 
 ###Build SVD-regression model
+
 ```{r}
 #separate train and test
 t <- c(20)
@@ -278,27 +288,14 @@ legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue'
 print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
 print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 ```
-## leave-one-out test for all availiable samples
+
+## leave-one-out test for all available samples
+
 Perform leave-one-out testing for accuracy with all available training samples.
+
 ```{r}
 #perform training and testing
-predTrue <- data.frame(NULL)
-for(t in 1:length(mono_motifs)){
-  train_motifs <- mono_motifs[-t]
-  test_motifs <- mono_motifs[t]
-  train_alignment <- matchAliMotif(train_motifs, bHLH_pbAlignment)
-  test_alignment <- matchAliMotif(test_motifs, bHLH_pbAlignment)
-  #Train svd-regression model
-  svd <- matrixSVD(gene2pos(train_motifs, pos = 'P-1'))
-  svdModel <- trainSVD(svd, train_alignment)
-  #Predict binding motifs for test set
-  pred_motifs <- predict(svdModel, test_alignment, zero = 0.01)
-  #Comparing between true and predicted testing set motifs 
-  true <- frequency2ddG(gene2pos(test_motifs, pos = 'P-1'))
-  pred <- frequency2ddG(pred_motifs)
-  add <- data.frame(true = unlist(as.numeric(true)), pred = unlist(as.numeric(pred)))
-  predTrue <- rbind.data.frame(predTrue, add)
-}
+predTrue <- SVDregression.CV(mono_motifs,bHLH_pbAlignment, pos = 'P-1')
 
 #plot results
 plot(predTrue$true,predTrue$pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'))
@@ -307,8 +304,10 @@ print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
 print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 ```
 
-## Compair with closest-sequence prediction
+## Compare with closest-sequence prediction
+
 Comparing the result of SVD-regression with the prediction accuracy with the closes-sequence prediction methods (Weirauch, 2014).
+
 ```{r}
 CSpred <- closestSeqPred(mono_motifs, bHLH_pbAlignment, pos = 'P-1')
 #plot results
@@ -317,8 +316,11 @@ legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue'
 print(paste0('Grouped R^2 = ', groupedR2(CSpred$pred, CSpred$true)))
 print(paste0('RMSD = ', RMSD(CSpred$pred,CSpred$true)))
 ```
+
 ## SVD prediction for single and double mutants
-Applying the SVD-regression model to predict the binding motifs of the single and double mutants of HES2 and ASCL2. The key Position used are the mutated positions, and the number of positions to use for each PC is infered from the line plot of Principle Componant-AA position Association.
+
+Applying the SVD-regression model to predict the binding motifs of the single and double mutants of HES2 and ASCL2. The key Position used are the mutated positions, and the number of positions to use for each PC is inferred from the line plot of Principle Component-AA position Association.
+
 ```{r}
 train_motifs <- mono_motifs
 test_motifs <- SELEX_motifs[-c(1,5)]
@@ -348,12 +350,11 @@ print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
 print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 ```
 
-
-
 ## AA property association with PC values
-Screening the association between the biophysical properties of amino acids and PC values from the SVD tranformation. 
+
+Screening the association between the biophysical properties of amino acids and PC values from the SVD transformation.
+
 ```{r}
 map <- aaPCmap(mono_motifs, bHLH_pbAlignment, pos = 'P-1', AApos = 13, PC = 2, property = 2)
 print(map)
 ```
-
