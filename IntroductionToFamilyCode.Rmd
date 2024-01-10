@@ -14,8 +14,9 @@ library(FamilyCode)
 
 ### Input data sets
 
-1: Probound_runDir: Directory containing the ProBound results each in a folder.\
-2: bHLH_info: CSV table containing experiment information. 3: bHLH_ali: Alignment file
+1: Probound_runDir: Directory containing the ProBound results each in a folder.
+2: bHLH_info: CSV table containing experiment information. 
+3: bHLH_ali: Alignment file
 
 ```{r}
 proBound_runDIR <- r'(HTdata/)'
@@ -80,10 +81,13 @@ Obtaining baseline experimental accuracy with pair-wise comparison between input
 The accuracy of prediction models are measured in grouped R\^2 and RMSD. Grouped R\^2 reports the mean of R\^2 values of regressions between a true and a predicted motif in ddG measurement. RMSD reports the pair-wise Root Mean Squared Difference
 
 ```{r}
-BaseLines <- getBaseLineAccuracy(all_mono_motifs, pos = 'P-1', randomSample = F)
+BaseLines <- getBaseLineAccuracy(all_mono_motifs, pos = 'P3', randomSample = F)
 
 plot(BaseLines$HT1,BaseLines$HT2, pch = 19, xlab = 'Experiment 1 ddG', ylab = 'Experiment 2 ddG', main = 'Pair-wise experiment comparison', col = c('green','blue','orange','red'))
 legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
+legend('topleft', paste0('R^2 = ', round(groupedR2(BaseLines$HT1, BaseLines$HT2, nrow(BaseLines)),4), '\n',
+                         'RMSD = ', round(RMSD(BaseLines$HT1,BaseLines$HT2),4)), bty = 'n')
+
 
 print(paste0('Grouped R^2 = ', groupedR2(BaseLines$HT1, BaseLines$HT2)))
 print(paste0('RMSD = ', RMSD(BaseLines$HT2,BaseLines$HT1)))
@@ -143,10 +147,10 @@ To visualize the association between residue type and base preference, you can s
 
 ```{r}
 AAPosition <- 13
-motifPosition <- 'P-1'
+motifPosition <- 'P-3'
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
 AAbp_Matrix <- AAbpCombination(mono_motifs, bHLH_pbAlignment, AAPosition, motifPosition)
-plot_tetrahedron(AAbp_Matrix, color = T)
+plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
 ```
 
 ## Single/Double Mutant Prediction
@@ -164,7 +168,7 @@ SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'NCANN
 posMatix <- gene2pos(SELEX_motifs, pos = 'P-1')
 colnames(posMatix) <- unlist(lapply(strsplit(colnames(posMatix), '_'), function(x) x[1]))
 #visualize results in tetrahedron for position P-1
-plot_tetrahedron(posMatix, label = T, color = F)
+plot_tetrahedron(posMatix, label = T, color = T)
 ```
 
 ### Examine base-line accuracy
@@ -256,18 +260,19 @@ svd <- matrixSVD(posMatrix)
 #ANOVA test on the level of association between SVD Principal components and residue type
 svd.pval <- svdANOVA(svd, bHLH_pbAlignment)
 #Plot p-vals 
-plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 1.5, xlab = 'AA Position', ylab = '-log p-val', main = 'Principle Componant-AA position Association')
-lines(svd.pval$X2, pch = 1, col = "green", lwd = 1.5)
-lines(svd.pval$X3, pch = 1, col = "blue", lwd = 1.5)
-legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 1.5, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
+plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 2, xlab = 'AA Position', ylab = '-log p-val', main = 'Principle Componant-AA position Association')
+lines(svd.pval$X2, pch = 1, col = "green", lwd = 2)
+lines(svd.pval$X3, pch = 1, col = "blue", lwd = 2)
+legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
 
 ```
+
 
 ###Build SVD-regression model
 
 ```{r}
 #separate train and test
-t <- c(20)
+t <- c(48)
 train_motifs <- mono_motifs[-t]
 test_motifs <- mono_motifs[t]
 train_alignment <- matchAliMotif(train_motifs, bHLH_pbAlignment)
@@ -295,11 +300,15 @@ Perform leave-one-out testing for accuracy with all available training samples.
 
 ```{r}
 #perform training and testing
-predTrue <- SVDregression.CV(mono_motifs,bHLH_pbAlignment, pos = 'P-1')
-
+predTrue <- SVDregression.Iterative.CV(mono_motifs,bHLH_pbAlignment, pos = 'P-1',Ftest_pVal = 0.05)
+attr(predTrue, 'no.keyPos')
 #plot results
-plot(predTrue$true,predTrue$pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'))
+plot(predTrue$true,predTrue$pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'), xlim = c(-3,3), ylim = c(-3,3))
 legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
+legend('topleft', paste0('R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, nrow(predTrue)),4), '\n',
+                         'RMSD = ', round(RMSD(predTrue$pred,predTrue$true),4)), bty = 'n')
+
+
 print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
 print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 ```
@@ -309,10 +318,14 @@ print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 Comparing the result of SVD-regression with the prediction accuracy with the closes-sequence prediction methods (Weirauch, 2014).
 
 ```{r}
-CSpred <- closestSeqPred(mono_motifs, bHLH_pbAlignment, pos = 'P-1')
+CSpred <- closestSeqPred(mono_motifs, bHLH_pbAlignment, pos = 'P1')
 #plot results
-plot(CSpred$true,CSpred$pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'))
+plot(CSpred$true,CSpred$pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'Closest Sequence prediction', col = c('green','blue','orange','red'))
 legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
+legend('topleft', paste0('R^2 = ', round(groupedR2(CSpred$pred, CSpred$true, nrow(CSpred)),4), '\n',
+                         'RMSD = ', round(RMSD(CSpred$pred,CSpred$true),4)), bty = 'n')
+
+
 print(paste0('Grouped R^2 = ', groupedR2(CSpred$pred, CSpred$true)))
 print(paste0('RMSD = ', RMSD(CSpred$pred,CSpred$true)))
 ```
@@ -346,6 +359,10 @@ predTrue <- data.frame(true = unlist(as.numeric(true)), pred = unlist(as.numeric
 #Plot results
 plot(true,pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction on mutants', col = c('green','blue','orange','red'))
 legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
+legend('topleft', paste0('R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, nrow(predTrue)),4), '\n',
+                         'RMSD = ', round(RMSD(predTrue$pred,predTrue$true),4)), bty = 'n')
+
+
 print(paste0('Grouped R^2 = ', groupedR2(predTrue$pred, predTrue$true)))
 print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 ```
@@ -355,6 +372,8 @@ print(paste0('RMSD = ', RMSD(predTrue$pred,predTrue$true)))
 Screening the association between the biophysical properties of amino acids and PC values from the SVD transformation.
 
 ```{r}
-map <- aaPCmap(mono_motifs, bHLH_pbAlignment, pos = 'P-1', AApos = 13, PC = 2, property = 2)
+plot <- aaPCboxPlot(mono_motifs, bHLH_pbAlignment, pos = 'P-1', AApos = 30, PC = 3)
+
+map <- aaPCmap(mono_motifs, bHLH_pbAlignment, pos = 'P-1', AApos = 13, PC = 1, property = 1)
 print(map)
 ```
