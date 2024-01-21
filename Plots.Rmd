@@ -1,6 +1,8 @@
 ---
 title: "FamilyCode_plots"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 ## Load data
 ```{r}
@@ -71,6 +73,7 @@ plot(euler(vennTable[, 1:3], shape = "ellipse"), quantities = TRUE)
 library(readr)
 library(R.utils)
 
+mkdirs('logos')
 for(i in 1:nrow(bHLH_index)){
   JSON_Lines <- readLines(paste0("HTdata/", bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
   mono <- JSON2Matrix(JSON_Lines, mode = bHLH_index$motif_model[i])
@@ -336,7 +339,7 @@ plotTest%>%layout(scene=scene)
 ```{r}
 #550/600
 pos <- 13
-u <- 3
+u <- 2
 svd <- matrixSVD(gene2pos(mono_motifs, pos = 'P-1'))
 x <- svd$u[,u]
 y <- substr(bHLH_pbAlignment$alignment, pos,pos)
@@ -356,9 +359,9 @@ svd <- matrixSVD(posMatrix)
 #ANOVA test on the level of association between SVD Principal components and residue type
 svd.pval <- svdANOVA(svd, bHLH_pbAlignment)
 #Plot p-vals 
-plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 2, xlab = 'AA Position', ylab = '-log p-val', main = 'Principle Componant-AA position Association on Motif position –1/1')
-lines(svd.pval$X2, pch = 1, col = "green", lwd = 2)
-lines(svd.pval$X3, pch = 1, col = "blue", lwd = 2)
+plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 3, xlab = 'AA Position', ylab = '-log p-val', main = 'Statistical significance of ANOVA test for PCs at DNA position –1/1')
+lines(svd.pval$X2, pch = 1, col = "green", lwd = 3)
+lines(svd.pval$X3, pch = 1, col = "blue", lwd = 3)
 legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
 ```
 
@@ -582,6 +585,7 @@ t.test(RMSDlistPred, RMSDlistClose)
 
 # Supplemental figure 1
 ```{r}
+mkdirs('S1')
 for(i in 1:nrow(bHLH_index)){
   result <- readLines(paste0("HTdata/",
                                      bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
@@ -598,9 +602,10 @@ for(i in 1:nrow(bHLH_index)){
 # Supplemental figure 2
 ```{r}
 library(plotly)
+mkdirs('S2')
 pos_index <- c('P-3','P-2','P-1','P1','P2','P3')
 for(i in 1:6){
-  for(j in 1:56){
+  for(j in c(5,13)){
     AAPosition <- j
     motifPosition <- pos_index[i]
     bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
@@ -615,6 +620,7 @@ for(i in 1:6){
 
 # Supplemtnal figure 3
 ```{r}
+mkdirs('S3')
 posMatrix <- gene2pos(mono_motifs, pos = 'P-1')
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
 svd <- matrixSVD(posMatrix)
@@ -651,10 +657,10 @@ for(i in 1:3){
   #ANOVA test on the level of association between SVD Principal components and residue type
   svd.pval <- svdANOVA(svd, bHLH_pbAlignment)
   #Plot p-vals 
-  plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 2, xlab = 'AA Position', ylab = '-log p-val', ylim = c(0, (1.1*max(svd.pval[,1:3]))) ,main = paste0('Principle Componant-AA position Association on Motif position -', i, '/',i))
-  lines(svd.pval$X2, pch = 1, col = "green", lwd = 2)
-  lines(svd.pval$X3, pch = 1, col = "blue", lwd = 2)
-  legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
+  plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 3, xlab = 'AA Position', ylab = '-log p-val', ylim = c(0, (1.1*max(svd.pval[,1:3]))) ,main = paste0('Statistical significance of ANOVA test for PCs at DNA position -', i, '/+',i))
+  lines(svd.pval$X2, pch = 1, col = "green", lwd = 3)
+  lines(svd.pval$X3, pch = 1, col = "blue", lwd = 3)
+  #legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
 }
 
 ```
