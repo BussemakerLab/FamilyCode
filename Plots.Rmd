@@ -132,7 +132,6 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
 
 ## Panel E
 ```{r}
-
 colorCode <- pvalTable$`P-1`
 colorCode[is.na(colorCode)] <- median(colorCode[!is.na(colorCode)])
 max <- max(colorCode)
@@ -149,7 +148,7 @@ for(i in 1:length(colorList)){
   addScript <- gsub('\\$resiNum\\$', i, addScript)
   script <- c(script, addScript)
 }
-run.pymol(script = script)
+run.pymol(pymol.dir = 'path/to/PyMOLWin.exe',script = script)
 ```
 
 # Figure 3
