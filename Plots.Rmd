@@ -1,11 +1,13 @@
 ---
 title: "FamilyCode_plots"
 output:
-  pdf_document: default
+  html_document:
+    df_print: paged
   html_notebook: default
+  pdf_document: default
 ---
 ## Load data
-```{r}
+```{r Load data}
 library(FamilyCode)
 proBound_runDIR <- r'(HTdata/)'
 bHLH_info <- read.csv(file = r"(bHLH_info.csv)", row.names = 1)
@@ -59,9 +61,9 @@ SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'NCANN
 ```
 
 
-# Figure 2
+# Figure 1
 ## Panal A
-```{r}
+```{r 1A}
 library(eulerr)
 vennTable <- unique(bHLH_info[,1:2])
 vennTable <- table(vennTable)
@@ -69,7 +71,7 @@ vennTable <- vennTable == 1
 plot(euler(vennTable[, 1:3], shape = "ellipse"), quantities = TRUE)
 ```
 ## Panel D 
-```{r}
+```{r 1D}
 library(readr)
 library(R.utils)
 
@@ -86,7 +88,7 @@ for(i in 1:nrow(bHLH_index)){
 
 # Figure 2
 ## Panal A
-```{r}
+```{r 2A}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-1'
@@ -97,7 +99,7 @@ scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
 plot%>%layout(scene=scene)
 ```
 ## Panel B
-```{r}
+```{r 2B}
 AAPosition <- 5
 motifPosition <- 'P-1'
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
@@ -108,7 +110,7 @@ plot%>%layout(scene=scene)
 ```
 
 ## Panel C
-```{r}
+```{r 2C}
 AAPosition <- 13
 motifPosition <- 'P-3'
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
@@ -119,7 +121,7 @@ plot%>%layout(scene=scene)
 ```
 
 ## Panel D
-```{r}
+```{r 2D}
 pvalTable <- getPvalTable(mono_motifs, Alignment = bHLH_pbAlignment, pos_index = c('P-3','P-2','P-1','P1','P2','P3'))
 #apply -log(10)
 pvalTable <- -log(pvalTable,10)
@@ -131,7 +133,7 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
 ```
 
 ## Panel E
-```{r}
+```{r 2E}
 colorCode <- pvalTable$`P-1`
 colorCode[is.na(colorCode)] <- median(colorCode[!is.na(colorCode)])
 max <- max(colorCode)
@@ -148,12 +150,12 @@ for(i in 1:length(colorList)){
   addScript <- gsub('\\$resiNum\\$', i, addScript)
   script <- c(script, addScript)
 }
-run.pymol(pymol.dir = 'path/to/PyMOLWin.exe',script = script)
+run.pymol(pymol.dir = 'PATH/TO/PYMOL/PyMOLWin.exe',script = script)
 ```
 
 # Figure 3
 ## Panel A
-```{r}
+```{r 3A}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-1'
@@ -197,7 +199,7 @@ mononucleotide_logo(Rmean)
 ```
 
 ## Panel B
-```{r}
+```{r 3B}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-1'
@@ -242,7 +244,7 @@ mononucleotide_logo(log(Rmean))
 
 # Figure 4
 ## Panal A
-```{r}
+```{r 4A}
 AAPosition <- 13
 motifPosition <- 'P-1'
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
@@ -335,7 +337,7 @@ plotTest%>%layout(scene=scene)
 ```
 
 ## Panel B
-```{r}
+```{r 4B}
 #550/600
 pos <- 13
 u <- 2
@@ -351,7 +353,7 @@ legend(x = "topleft", legend = colScheme$AA, col =colScheme$col, pch = 19, cex =
 ```
 
 ## Panel C
-```{r}
+```{r 4C}
 posMatrix <- gene2pos(mono_motifs, pos = 'P-1')
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
 svd <- matrixSVD(posMatrix)
@@ -365,7 +367,7 @@ legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red'
 ```
 
 ## Panel D
-```{r}
+```{r 4D}
 #550/600
 BaseLines <- getBaseLineAccuracy(all_mono_motifs, pos = 'P-1', randomSample = F)
 
@@ -376,7 +378,7 @@ legend('topleft', paste0('R^2 = ', round(groupedR2(BaseLines$HT1, BaseLines$HT2,
 ```
 
 ## Panel E (iterative prediction)
-```{r}
+```{r 4E}
 #perform training and testing
 predTrue <- SVDregression.Iterative.CV(mono_motifs,bHLH_pbAlignment, pos = 'P-1',Ftest_pVal = 0.05)
 #attr(predTrue, 'no.keyPos')
@@ -388,7 +390,7 @@ legend('topleft', paste0('R^2 = ', round(groupedR2(predTrue$pred, predTrue$true,
 ```
 
 ## Panel F
-```{r}
+```{r 4F}
 CSpred <- closestSeqPred(mono_motifs, bHLH_pbAlignment, pos = 'P-1')
 #plot results
 plot(CSpred$true,CSpred$pred, pch = 19, xlab = 'Experimental ΔΔG', ylab = 'Predicted ΔΔG', main = 'Closest Sequence prediction', col = c('green','blue','orange','red'), xlim = c(-3,3), ylim = c(-3,3), cex = 1, cex.lab = 1.2, cex.axis = 1.2)
@@ -399,7 +401,7 @@ legend('topleft', paste0('R^2 = ', round(groupedR2(CSpred$pred, CSpred$true, nro
 ```
 
 ## Panel G (non-Iterative)
-```{r}
+```{r 4G}
 train_motifs <- mono_motifs
 test_motifs <- SELEX_motifs[-c(1,5)]
 train_alignment <- matchAliMotif(train_motifs, bHLH_pbAlignment)
@@ -428,39 +430,9 @@ legend('topleft', paste0('R^2 = ', round(groupedR2(predTrue$pred, predTrue$true,
                          'RMSD = ', round(RMSD(predTrue$pred,predTrue$true),4)), bty = 'n')
 ```
 
-## Panel G (Iterative)
-```{r}
-train_motifs <- mono_motifs
-test_motifs <- SELEX_motifs[-c(1,5)]
-train_alignment <- matchAliMotif(train_motifs, bHLH_pbAlignment)
-test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c(
-                             '-KSLRPLLEKRRRARINQSLSQLKGLI-L------PLLGRENS--NCSKLEKADVL',
-                             '-KSLKPLLEKRRVARINQSLSQLKGLI-L------PLLGRENS--NCSKLEKADVL',
-                             '-KSLRPLLEKRRVARINQSLSQLKGLI-L------PLLGRENS--NCSKLEKADVL',
-                             '-VARKNERERNRVKLVNLGFQALRQHV-P------HGG-------ASKKLSKVETL',
-                             '-VARRNERERNRRKLVNLGFQALRQHV-P------HGG-------ASKKLSKVETL',
-                             '-VARKNERERNRRKLVNLGFQALRQHV-P------HGG-------ASKKLSKVETL')
-                             )
-#Train svd-regression model
-svd <- matrixSVD(gene2pos(train_motifs, pos = 'P-1'))
-svdModel <- trainSVD.Iterative(svd, train_alignment, Ftest_pVal = 0.05)
-#Predict binding motifs for test set
-pred_motifs <- predict(svdModel, test_alignment, zero = 0.001)
-#Comparing between true and predicted testing set motifs 
-true <- frequency2ddG(gene2pos(test_motifs, pos = 'P-1'))
-pred <- frequency2ddG(pred_motifs)
-predTrue <- data.frame(true = unlist(as.numeric(true)), pred = unlist(as.numeric(pred)))
-
-#plot results
-plot(predTrue$true,predTrue$pred, pch = 19, xlab = 'Experimental ddG', ylab = 'Predicted ddG', main = 'SVD prediction', col = c('green','blue','orange','red'), xlim = c(-2,2), ylim = c(-2,2))
-legend( x = "bottomright", legend = c('A', 'C', 'G', 'T'), col =c('green','blue','orange','red'), pch = 19, bty='n')
-legend('topleft', paste0('R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, nrow(predTrue)),4), '\n',
-                         'RMSD = ', round(RMSD(predTrue$pred,predTrue$true),4)), bty = 'n')
-```
-
 # Figure 5
 ## Panel B
-```{r}
+```{r 5B}
 result <- readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
@@ -470,7 +442,7 @@ mononucleotide_logo(frequency2ddG(mono))
 ```
 
 ## Panel C
-```{r}
+```{r 5C}
 result <- readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
@@ -480,7 +452,7 @@ mononucleotide_logo(frequency2ddG(mono))
 ```
 
 ## Panel D
-```{r}
+```{r 5D}
 for(i in 1:length(SELEX_motifs)){
   mono <- SELEX_motifs[[i]]$matrix
   plot(mononucleotide_logo(frequency2ddG(mono[,c('P-1','P1')])))
@@ -515,7 +487,7 @@ for(i in 1:ncol(pred_motifs_P1)){
 ```
 
 ## Panel F
-```{r}
+```{r 5F}
 library(readxl)
 library(ggplot2)
 library(ggsignif)
@@ -561,29 +533,9 @@ p <- ggplot(dt, aes(x = name, y = prop, fill = name, color = name)) +
 plot(p)
 ```
 
-## Compair R2 between models
-```{r}
-R2listPred <- c()
-RMSDlistPred <- c()
-R2listClose <- c()
-RMSDlistClose <- c()
-for(i in 1:52){
-  predTrue <- SVDregression.Iterative.CV(mono_motifs[-i],bHLH_pbAlignment[-i,], pos = 'P-1',Ftest_pVal = 0.05)
-  R2listPred <- c(R2listPred, groupedR2(predTrue$pred, predTrue$true, nrow(predTrue)))
-  RMSDlistPred <- c(RMSDlistPred, RMSD(predTrue$pred,predTrue$true))
-  CSpred <- closestSeqPred(mono_motifs[-i], bHLH_pbAlignment[-i,], pos = 'P-1')
-  R2listClose <- c(R2listClose, groupedR2(CSpred$pred, CSpred$true, nrow(CSpred)))
-  RMSDlistClose <- c(RMSDlistClose, RMSD(CSpred$pred,CSpred$true))
-  print(i)
-}
-
-t <- t.test(R2listPred, R2listClose)
-t$p.value
-t.test(RMSDlistPred, RMSDlistClose)
-```
-
 # Supplemental figure 1
-```{r}
+```{r S1}
+library(R.utils)
 mkdirs('S1')
 for(i in 1:nrow(bHLH_index)){
   result <- readLines(paste0("HTdata/",
@@ -599,7 +551,7 @@ for(i in 1:nrow(bHLH_index)){
 ```
 
 # Supplemental figure 2
-```{r}
+```{r S2}
 library(plotly)
 mkdirs('S2')
 pos_index <- c('P-3','P-2','P-1','P1','P2','P3')
@@ -618,7 +570,7 @@ for(i in 1:6){
 ```
 
 # Supplemtnal figure 3
-```{r}
+```{r S3}
 mkdirs('S3')
 posMatrix <- gene2pos(mono_motifs, pos = 'P-1')
 bHLH_pbAlignment <- matchAliMotif(mono_motifs, bHLH_pbAlignment)
@@ -646,7 +598,7 @@ for(j in 1:56){
 ```
 
 # Supplemtnal figure 4
-```{r}
+```{r S4}
 #1400/400
 pos_index <- c('P1','P2','P3')
 for(i in 1:3){
