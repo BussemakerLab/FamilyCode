@@ -9,6 +9,7 @@ output:
 ## Load data
 ```{r Load data}
 library(FamilyCode)
+options(warn = -1)
 proBound_runDIR <- r'(HTdata/)'
 bHLH_info <- read.csv(file = r"(bHLH_info.csv)", row.names = 1)
 bHLH_ali <- read.table(r"(bHLH_pb.sto.stockholm)", quote="\"", fill = T)
@@ -62,7 +63,7 @@ SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'NCANN
 
 
 # Figure 1
-## Panal A
+## Panel A
 ```{r 1A}
 library(eulerr)
 vennTable <- unique(bHLH_info[,1:2])
@@ -87,7 +88,7 @@ for(i in 1:nrow(bHLH_index)){
 ```
 
 # Figure 2
-## Panal A
+## Panel A
 ```{r 2A}
 library(plotly)
 AAPosition <- 13
@@ -243,7 +244,7 @@ mononucleotide_logo(log(Rmean))
 ```
 
 # Figure 4
-## Panal A
+## Panel A
 ```{r 4A}
 AAPosition <- 13
 motifPosition <- 'P-1'
@@ -569,7 +570,7 @@ for(i in 1:6){
 }
 ```
 
-# Supplemtnal figure 3
+# Supplemental figure 3
 ```{r S3}
 mkdirs('S3')
 posMatrix <- gene2pos(mono_motifs, pos = 'P-1')
@@ -597,7 +598,7 @@ for(j in 1:56){
 
 ```
 
-# Supplemtnal figure 4
+# Supplemental figure 4
 ```{r S4}
 #1400/400
 pos_index <- c('P1','P2','P3')
