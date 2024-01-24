@@ -1,0 +1,183 @@
+{
+  "modelSeeding": {"bindingModes": [
+    {"seedScale": 1},
+    {
+      "mononucleotideIUPAC": "NNNCANNTGNNN",
+      "seedScale": 1
+    },
+    {
+      "mononucleotideIUPAC": "NNNNNNNNNNNNNNNN",
+      "seedScale": 1
+    }
+  ]},
+  "optimizerSetting": {
+    "likelihoodThreshold": 2.0E-4,
+    "nThreads": 12,
+    "lambdaL2": 1.0E-6,
+    "pseudocount": 20,
+    "patternSearchSettings": {},
+    "minimizerType": "lbfgs",
+    "nRetries": 3,
+    "hkSettings": {},
+    "output": {
+      "storeHessian": false,
+      "outputPath": "/mnt/e/desktop/HB_Rotation_1/ProBound_run/OLIG3_Yin2017/result",
+      "printTrajectory": false,
+      "baseName": "fit",
+      "printPSAM": false,
+      "verbose": true
+    },
+    "lbfgsSettings": {
+      "memory": 100,
+      "convergence": 1.0E-7,
+      "MCSearch": true,
+      "maxIters": 2000
+    },
+    "sgdSettings": {},
+    "fixedLibrarySize": false,
+    "expBound": 40,
+    "slbfgs_plsSettings": {},
+    "slbfgsSettings": {}
+  },
+  "modelSettings": {
+    "enrichmentModel": [{
+      "r0KUsed": 1,
+      "round": 1,
+      "bindingSaturation": false,
+      "concentration": 1,
+      "modelType": "SELEX",
+      "bindingModeInteractions": [-1],
+      "r0KsTested": [1],
+      "bindingModes": [-1],
+      "modifications": []
+    }],
+    "countTable": [{
+      "leftFlank": "CGACGCTCTTCCGATCTTCGTC",
+      "transliterate": {
+        "in": [],
+        "out": []
+      },
+      "variableRegionLength": 40,
+      "modeledColumns": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "inputFileType": "tsv",
+      "nColumns": 5,
+      "rightFlank": "CGTATCGTATGCCGTCTTCTGCTTGCCGACTCCG",
+      "countTableFile": "/mnt/e/countTables/Yin2017/OLIG3_FL_KX_TTCGTC40NCGT-unmethylated.100000.tsv"
+    }],
+    "bindingModeInteractions": [],
+    "bindingModes": [
+      {
+        "size": 0,
+        "fitLogActivity": true,
+        "flankLength": 0,
+        "dinucleotideDistance": 0,
+        "positionBias": false,
+        "singleStrand": false,
+        "modifications": []
+      },
+      {
+        "size": 12,
+        "fitLogActivity": true,
+        "flankLength": 0,
+        "dinucleotideDistance": 0,
+        "positionBias": false,
+        "singleStrand": false,
+        "modifications": []
+      },
+      {
+        "size": 16,
+        "fitLogActivity": true,
+        "flankLength": 0,
+        "dinucleotideDistance": 0,
+        "positionBias": false,
+        "singleStrand": false,
+        "modifications": []
+      }
+    ],
+    "letterComplement": "C-G,A-T"
+  },
+  "modelFittingConstraints": {
+    "enrichmentModel": [{
+      "fitDelta": [false],
+      "roundSpecificGamma": true,
+      "fitRho": false,
+      "roundSpecificDelta": true,
+      "fitGamma": false,
+      "trySaturation": false,
+      "roundSpecificRho": true
+    }],
+    "nShifts": 0,
+    "countTable": [{}],
+    "addBindingModesSequentially": true,
+    "flankLengths": [0],
+    "bindingModeInteractions": [],
+    "singleModeLengthSweep": false,
+    "bindingModes": [
+      {
+        "maxFlankLength": -1,
+        "positionBiasBinWidth": 1,
+        "optimizeSizeHeuristic": false,
+        "maxSize": -1,
+        "optimizeFlankLength": false,
+        "symmetryString": "null",
+        "roundSpecificActivity": true,
+        "informationThreshold": 0.1,
+        "optimizeMotifShift": false,
+        "fittingStages": [],
+        "optimizeMotifShiftHeuristic": false,
+        "experimentSpecificPositionBias": true,
+        "minSize": -1,
+        "experimentSpecificActivity": true,
+        "optimizeSize": false
+      },
+      {
+        "maxFlankLength": -1,
+        "positionBiasBinWidth": 1,
+        "optimizeSizeHeuristic": false,
+        "maxSize": -1,
+        "symmetryString": "abcdefFEDCBA",
+        "optimizeFlankLength": false,
+        "roundSpecificActivity": true,
+        "informationThreshold": 0.1,
+        "optimizeMotifShift": false,
+        "fittingStages": [
+          {"optimizeFlankLength": true},
+          {"optimizeMotifShift": false},
+          {"optimizeMotifShiftHeuristic": false}
+        ],
+        "optimizeMotifShiftHeuristic": false,
+        "experimentSpecificPositionBias": true,
+        "minSize": -1,
+        "experimentSpecificActivity": true,
+        "optimizeSize": false
+      },
+      {
+        "maxFlankLength": -1,
+        "positionBiasBinWidth": 1,
+        "optimizeSizeHeuristic": false,
+        "maxSize": -1,
+        "symmetryString": "abcdefghHGFEDCBA",
+        "optimizeFlankLength": false,
+        "roundSpecificActivity": true,
+        "informationThreshold": 0.1,
+        "optimizeMotifShift": false,
+        "fittingStages": [
+          {"optimizeFlankLength": true},
+          {"optimizeMotifShift": false},
+          {"optimizeMotifShiftHeuristic": false}
+        ],
+        "optimizeMotifShiftHeuristic": false,
+        "experimentSpecificPositionBias": true,
+        "minSize": -1,
+        "experimentSpecificActivity": true,
+        "optimizeSize": false
+      }
+    ]
+  }
+}

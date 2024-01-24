@@ -1,0 +1,869 @@
+> Reading configuration JSON object and validating general schema.
+> Validating configuration schema.
+{"enrichmentModel":[{"fitDelta":[false],"roundSpecificGamma":true,"fitRho":false,"roundSpecificDelta":true,"fitGamma":false,"trySaturation":false,"roundSpecificRho":true}],"nShifts":0,"countTable":[{}],"addBindingModesSequentially":true,"flankLengths":[0],"bindingModeInteractions":[],"singleModeLengthSweep":false,"bindingModes":[{"maxFlankLength":-1,"positionBiasBinWidth":1,"optimizeSizeHeuristic":false,"maxSize":-1,"optimizeFlankLength":false,"symmetryString":"null","roundSpecificActivity":true,"informationThreshold":0.1,"optimizeMotifShift":false,"fittingStages":[],"optimizeMotifShiftHeuristic":false,"experimentSpecificPositionBias":true,"minSize":-1,"experimentSpecificActivity":true,"optimizeSize":false},{"maxFlankLength":-1,"positionBiasBinWidth":1,"optimizeSizeHeuristic":false,"maxSize":-1,"symmetryString":"abcdefFEDCBA","optimizeFlankLength":false,"roundSpecificActivity":true,"informationThreshold":0.1,"optimizeMotifShift":false,"fittingStages":[{"optimizeFlankLength":true},{"optimizeMotifShift":false},{"optimizeMotifShiftHeuristic":false}],"optimizeMotifShiftHeuristic":false,"experimentSpecificPositionBias":true,"minSize":-1,"experimentSpecificActivity":true,"optimizeSize":false},{"maxFlankLength":-1,"positionBiasBinWidth":1,"optimizeSizeHeuristic":false,"maxSize":-1,"symmetryString":"abcdefghHGFEDCBA","optimizeFlankLength":false,"roundSpecificActivity":true,"informationThreshold":0.1,"optimizeMotifShift":false,"fittingStages":[{"optimizeFlankLength":true},{"optimizeMotifShift":false},{"optimizeMotifShiftHeuristic":false}],"optimizeMotifShiftHeuristic":false,"experimentSpecificPositionBias":true,"minSize":-1,"experimentSpecificActivity":true,"optimizeSize":false}]}
+Entry=bindingModes, aEntry=[{"maxFlankLength":-1,"positionBiasBinWidth":1,"optimizeSizeHeuristic":false,"maxSize":-1,"optimizeFlankLength":false,"symmetryString":"null","roundSpecificActivity":true,"informationThreshold":0.1,"optimizeMotifShift":false,"fittingStages":[],"optimizeMotifShiftHeuristic":false,"experimentSpecificPositionBias":true,"minSize":-1,"experimentSpecificActivity":true,"optimizeSize":false},{"maxFlankLength":-1,"positionBiasBinWidth":1,"optimizeSizeHeuristic":false,"maxSize":-1,"symmetryString":"abcdefFEDCBA","optimizeFlankLength":false,"roundSpecificActivity":true,"informationThreshold":0.1,"optimizeMotifShift":false,"fittingStages":[{"optimizeFlankLength":true},{"optimizeMotifShift":false},{"optimizeMotifShiftHeuristic":false}],"optimizeMotifShiftHeuristic":false,"experimentSpecificPositionBias":true,"minSize":-1,"experimentSpecificActivity":true,"optimizeSize":false},{"maxFlankLength":-1,"positionBiasBinWidth":1,"optimizeSizeHeuristic":false,"maxSize":-1,"symmetryString":"abcdefghHGFEDCBA","optimizeFlankLength":false,"roundSpecificActivity":true,"informationThreshold":0.1,"optimizeMotifShift":false,"fittingStages":[{"optimizeFlankLength":true},{"optimizeMotifShift":false},{"optimizeMotifShiftHeuristic":false}],"optimizeMotifShiftHeuristic":false,"experimentSpecificPositionBias":true,"minSize":-1,"experimentSpecificActivity":true,"optimizeSize":false}]
+Entry=bindingModeInteractions, aEntry=[]
+Entry=countTable, aEntry=[{}]
+Entry=enrichmentModel, aEntry=[{"fitDelta":[false],"roundSpecificGamma":true,"fitRho":false,"roundSpecificDelta":true,"fitGamma":false,"trySaturation":false,"roundSpecificRho":true}]
+> Builds likelihood object.
+>> Creating CombinedLikelihood object.
+Alphabet
+========
+Letter Complement: C-G,A-T
+Letter Order:      ACGT
+
+Optimizer settings:
+===================
+lambdaL2         = 1.0E-6
+pseudocount      = 20.0
+expBound         = 40.0
+fixedLibrarySize = false
+
+>> Determining fitting order.
+
+ Summary of experiments 
+ ====================== 
+Experiment 0:
+-------------
+Count table:      Count table 0
+Enrichment model: SELEX enrichment model 0
+   Concentration: 1.0
+Binding modes: 
+                  Binding mode 0
+                  Binding mode 1
+                  Binding mode 2
+Binding mode interactions: 
+                  NONE
+
+> Builds optimizer.
+> Using LBFGS.
+> Starting optimization.
+
+==================================
+== Starts fiting Binding mode 0 ==
+==================================
+> Optimizing h (component0-0-h).
+>>  Starting new optimization: component0-0-h. (2023-04-02 00:46:28.998).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[0,1,2,3,4]}],"bindingModeInteractions":[],"bindingModes":[{},{},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 15.354916548642855
+gradient      = {0.9069,-0.1612,-0.2486,-0.2486,-0.2486}
+gradient norm = 1.0167916200318143
+Starting Function Value: 15.354916548642855
+Iterations   Fnc. Calls           Likelihood       Distance Moved           Step Alpha        Gradient Norm
+         1            3   10.537571607734462    5.000000000000000    4.917428410595630    0.797254232642670
+         2            4    8.042454037626925   26.122850596647055    1.000000000000000    0.847821435848140
+         3            5    6.431571657966747   11.059833152469173    1.000000000000000    0.844218116153867
+         4            6    3.292976711581726    7.075362616852625    1.000000000000000    0.472964097730906
+         5            7    2.713607879036903    3.008271905818634    1.000000000000000    0.281242982654605
+         6            8    2.611104587581442    1.993974529130785    1.000000000000000    0.317619592595294
+         7            9    2.328662619254358    2.817051898149953    1.000000000000000    0.278657862332573
+         8           10    1.864326007673489    4.267144284524403    1.000000000000000    0.246151307665008
+         9           12    1.724915250973580    1.509285123377995    0.026147764463599    0.236901326162085
+        10           14    1.665137065707158    0.640970511296261    0.085954774911456    0.210618083153211
+        11           15    1.616060942735907    1.942703988559285    1.000000000000000    0.150234342335541
+        12           16    1.597095427707197    1.722410821034900    1.000000000000000    0.103146925814923
+        13           17    1.556956111303030    0.641842689734399    1.000000000000000    0.029358186514216
+        14           18    1.553260050521292    0.303484841343254    1.000000000000000    0.010643088272942
+        15           19    1.552978102866601    0.052866798083336    1.000000000000000    0.001661036447586
+        16           20    1.552972491863296    0.006965010161120    1.000000000000000    0.000430477328151
+        17           21    1.552972127569885    0.001579233799980    1.000000000000000    0.000085274662987
+        18           22    1.552972107607584    0.000512848119577    1.000000000000000    0.000003619392422
+        19           23    1.552972107570293    0.000512848119577    1.000000000000000    0.000000088178869
+Convergence criteria met.
+After: gradient norm = 8.817886859459897E-8
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-13.5093,-6.5351,0.2846,6.6815,13.0784}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-6.3969,-6.3969,-6.3969,-6.3969,-6.3969}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+> Initial optimization (component0-1-f0).
+>>  Starting new optimization: component0-1-f0. (2023-04-02 00:46:30.942).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[5,6,7,8,9]}],"bindingModeInteractions":[],"bindingModes":[{"mononucleotide":[],"activity":[[0,1,2,3,4]]},{},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.5529721075703058
+gradient      = {-0.0000,-0.0000,-0.0001,-0.0001,-0.0000,0.0000,0.0000,-0.0000,-0.0000,0.0000}
+gradient norm = 9.385459142176294E-5
+Starting Function Value: 1.5529721075703058
+Iterations   Fnc. Calls           Likelihood       Distance Moved           Step Alpha        Gradient Norm
+         1            3    1.552972096944029    0.000222829120960    2.374195205419297    0.000065110690754
+         2            4    1.552972090128049    0.000132675322403    1.000000000000000    0.000062535700616
+         3            5    1.552971960473591    0.003484258249615    1.000000000000000    0.000148817681636
+         4            6    1.552971758653950    0.006215929392771    1.000000000000000    0.000266778412211
+         5            7    1.552970988579755    0.026156501567934    1.000000000000000    0.000560330915009
+         6            8    1.552969215560669    0.063892331789861    1.000000000000000    0.000979665310397
+         7            9    1.552964356061387    0.181562480707735    1.000000000000000    0.001686977574871
+         8           10    1.552952092540640    0.469235574591889    1.000000000000000    0.002781138917837
+         9           11    1.552921165893169    1.207148020157487    1.000000000000000    0.004425731041352
+        10           12    1.552849257140485    2.876421430734275    1.000000000000000    0.006596303432302
+        11           13    1.552707655821829    5.920804507354561    1.000000000000000    0.008472039214455
+        12           14    1.552596022756045    9.498228864186900    1.000000000000000    0.011607023913791
+        13           15    1.552412105716415    5.811677427964243    1.000000000000000    0.006048714469229
+        14           16    1.552342029144217    0.361951442049489    1.000000000000000    0.002584091607673
+        15           17    1.552326819211272    0.288110901379756    1.000000000000000    0.000128019292723
+        16           18    1.552326796493465    0.012007283877551    1.000000000000000    0.000008312082891
+        17           19    1.552326796394421    0.000473285386767    1.000000000000000    0.000000390730161
+        18           20    1.552326796393688    0.000001519401548    1.000000000000000    0.000000101181919
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+Gradient   = {-1.5983e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {4.6045e-07,4.0683e-07,6.3499e-07,4.1156e-07,4.4842e-07,1.0260e-06,2.4223e-07,2.0295e-07,-5.1780e-07,-9.5339e-07}
+grad*pCur  = -3.6203640156653287E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118181189054857E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:137)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:435)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5983e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (1/3).
+Gradient   = {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {1.5982e-12,-4.4650e-09,4.9027e-08,-1.7459e-08,-7.0466e-09,4.4669e-09,-5.3490e-08,6.6486e-08,-1.0414e-08,-7.0494e-09}
+grad*pCur  = -1.0237780736211205E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118191901827653E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:435)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (2/3).
+Gradient   = {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {1.5982e-12,-4.4650e-09,4.9027e-08,-1.7459e-08,-7.0466e-09,4.4669e-09,-5.3490e-08,6.6486e-08,-1.0414e-08,-7.0494e-09}
+grad*pCur  = -1.0237780736241893E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118191901819805E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:435)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (3/3).
+After: gradient norm = 1.0118191901819805E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-0.2820,0.0135,0.1678,0.0671,0.0336}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+Suggested variations:
+key=0;0;0, description = Initial model.
+> Optimizing variation "Initial model." (component0-2-variation0).
+>>  Starting new optimization: component0-2-variation0. (2023-04-02 00:46:33.982).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[5,6,7,8,9]}],"bindingModeInteractions":[],"bindingModes":[{"mononucleotide":[],"activity":[[0,1,2,3,4]]},{},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.5523267963936882
+gradient      = {-0.0000,0.0000,-0.0000,0.0000,0.0000,-0.0000,0.0000,-0.0000,0.0000,0.0000}
+gradient norm = 1.0118191901847881E-7
+stepAlphaMin = 1.0E-20
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: Search terminated, optimal step alpha is lower than minimum!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:231)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:464)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (1/3).
+Gradient   = {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {1.5982e-12,-4.4650e-09,4.9027e-08,-1.7459e-08,-7.0466e-09,4.4669e-09,-5.3490e-08,6.6486e-08,-1.0414e-08,-7.0494e-09}
+grad*pCur  = -1.0237780736236112E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118191901824591E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:464)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (2/3).
+Gradient   = {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {1.5982e-12,-4.4650e-09,4.9027e-08,-1.7459e-08,-7.0466e-09,4.4669e-09,-5.3490e-08,6.6486e-08,-1.0414e-08,-7.0494e-09}
+grad*pCur  = -1.023778073625958E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118191901870672E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:464)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (3/3).
+After: gradient norm = 1.0118191901870672E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-0.2820,0.0135,0.1678,0.0671,0.0336}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+  The Likelihood DID NOT improve. Discarding fit component0-2-variation0.
+> No varitions possible for Binding mode 0.
+> Optimizing the full model (component0-4-all).
+>>  Starting new optimization: component0-4-all. (2023-04-02 00:46:34.597).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[5,6,7,8,9]}],"bindingModeInteractions":[],"bindingModes":[{"mononucleotide":[],"activity":[[0,1,2,3,4]]},{},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.5523267963936886
+gradient      = {-0.0000,0.0000,-0.0000,0.0000,0.0000,-0.0000,0.0000,-0.0000,0.0000,0.0000}
+gradient norm = 1.0118191901806915E-7
+Gradient   = {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {1.5982e-12,-4.4650e-09,4.9027e-08,-1.7459e-08,-7.0466e-09,4.4669e-09,-5.3490e-08,6.6486e-08,-1.0414e-08,-7.0494e-09}
+grad*pCur  = -1.0237780736163288E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118191901791282E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:632)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (1/3).
+Gradient   = {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+pCurr      = {1.5982e-12,-4.4650e-09,4.9027e-08,-1.7459e-08,-7.0466e-09,4.4669e-09,-5.3490e-08,6.6486e-08,-1.0414e-08,-7.0494e-09}
+grad*pCur  = -1.0237780736264877E-14
+parameters = {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+|grad|/|x| = 1.0118191901824063E-7
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: The relative width of the interval of uncertainty is less than uTol!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:274)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:632)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (2/3).
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+UNUSUAL TERMINATION!
+modelOptimization.Optimizer$Optimizer_LineSearchException: Line search failure: Number of line search function calls exceeded maximum in mcsearch()!
+	at modelOptimization.LBFGS.mcsearch(LBFGS.java:283)
+	at modelOptimization.LBFGS.optimize(LBFGS.java:95)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:691)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:632)
+	at proBoundApp.App.main(App.java:154)
+>>>> Exception caugth. Parameters reverted.
+> Parameter: {-7.9909e-07,2.8201e-01,2.6854e-01,1.0070e-01,3.3567e-02,-2.8201e-01,1.3471e-02,1.6784e-01,6.7136e-02,3.3569e-02}
+> Gradient:  {-1.5982e-12,4.4650e-09,-4.9027e-08,1.7459e-08,7.0466e-09,-4.4669e-09,5.3490e-08,-6.6486e-08,1.0414e-08,7.0494e-09}
+>>>> Re-trying (3/3).
+After: gradient norm = 1.0118180802681884E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-0.2820,0.0135,0.1678,0.0671,0.0336}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+
+==================================
+== Starts fiting Binding mode 1 ==
+==================================
+> Optimizing h (component1-0-h).
+>>  Starting new optimization: component1-0-h. (2023-04-02 00:46:37.229).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[0,1,2,3,4]}],"bindingModeInteractions":[],"bindingModes":[{},{},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 2.065464671694298
+gradient      = {-0.0800,-0.1245,-0.1321,0.0002,0.3364}
+gradient norm = 0.39056375724763276
+Starting Function Value: 2.065464671694298
+Iterations   Fnc. Calls           Likelihood       Distance Moved           Step Alpha        Gradient Norm
+         1            2    1.796322806993299    1.000000000000000    2.560401423437661    0.188246123430953
+         2            3    1.678157380565100    1.105984860994933    1.000000000000000    0.102222400209176
+         3            4    1.645044254056486    0.657113852109615    1.000000000000000    0.063829288983591
+         4            5    1.629311891989863    0.439654210483005    1.000000000000000    0.025710539431887
+         5            6    1.627284387755013    0.181456921436211    1.000000000000000    0.003029207610904
+         6            7    1.627255356696675    0.025520013269876    1.000000000000000    0.000610673580064
+         7            8    1.627253963707734    0.004854368227703    1.000000000000000    0.000063760714688
+         8            9    1.627253952654102    0.000348337534938    1.000000000000000    0.000006077479472
+         9           10    1.627253952571256    0.000026723591201    1.000000000000000    0.000000264361540
+        10           11    1.627253952571086    0.000026723591201    1.000000000000000    0.000000009012922
+Convergence criteria met.
+After: gradient norm = 9.01292248432108E-9
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {1.2463,0.8545,0.2558,-0.6837,-1.6729}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-1.0000,-1.0000,-1.0000,0.0000,-1.0000,-1.0000,0.0000,-1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {1.1842,1.4662,1.4527,1.2849,1.2178}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+> Initial optimization (component1-1-f0).
+>>  Starting new optimization: component1-1-f0. (2023-04-02 00:46:37.994).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[29,30,31,32,33]}],"bindingModeInteractions":[],"bindingModes":[{},{"mononucleotide":[1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14,17,16,19,18,21,20,23,22,22,23,20,21,18,19,16,17,14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1],"activity":[[24,25,26,27,28]]},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.630647555329609
+gradient      = {0.0268,0.0409,0.0259,0.0223,0.0316,0.0370,0.0268,0.0205,0.0438,0.0457,0.0165,0.0099,0.1190,0.0283,-0.0112,-0.0201,0.0137,0.1436,-0.0182,-0.0233,0.0233,0.0568,0.0313,0.0045,0.0000,0.0070,0.0151,0.0203,0.0155,0.0000,-0.0000,-0.0000,-0.0000,0.0000}
+gradient norm = 0.23302092940439378
+Starting Function Value: 1.630647555329609
+Iterations   Fnc. Calls           Likelihood       Distance Moved           Step Alpha        Gradient Norm
+         1            3    1.615181412325470    0.150650986799326    0.646512685295664    0.184307967100037
+         2            4    1.604184107790317    0.076300261658410    1.000000000000000    0.158487707515324
+         3            6    1.566111931218499    0.407791986816752    0.417762460695006    0.063463962819610
+         4            7    1.559039110701881    0.319108715587423    1.000000000000000    0.112385807657434
+         5            8    1.556496946496613    0.050548397636851    1.000000000000000    0.019168348280159
+         6            9    1.556106715064937    0.038441264519061    1.000000000000000    0.019963756436329
+         7           10    1.555761053157740    0.043679030809395    1.000000000000000    0.026135621169607
+         8           11    1.555136107479971    0.084579469037353    1.000000000000000    0.020906165817298
+         9           12    1.554569162100174    0.106495527721701    1.000000000000000    0.006314707244963
+        10           13    1.554440989140881    0.050879544915345    1.000000000000000    0.006019518895104
+        11           14    1.554378040412663    0.029284416799484    1.000000000000000    0.005970851366716
+        12           15    1.554282803271571    0.050720460266179    1.000000000000000    0.004447680594856
+        13           16    1.554221127565779    0.062347199489478    1.000000000000000    0.002058562214242
+        14           17    1.554198631971602    0.034987391277753    1.000000000000000    0.001447232262557
+        15           18    1.554183643617462    0.030684090854056    1.000000000000000    0.001108965819376
+        16           19    1.554157712143934    0.059986224156607    1.000000000000000    0.001407304025873
+        17           20    1.554081805482606    0.198192652198234    1.000000000000000    0.010778482821885
+        18           22    1.554052739845877    0.090998046200673    0.486441621433379    0.015512377827163
+        19           23    1.553979950737314    0.073572869280302    1.000000000000000    0.006069492644176
+        20           24    1.553940823294815    0.040101074134123    1.000000000000000    0.005624384948424
+        21           25    1.553831916916166    0.073545788140750    1.000000000000000    0.003719313503131
+        22           26    1.553733604749042    0.116879454842396    1.000000000000000    0.008719417067733
+        23           27    1.553649317445045    0.134233450405619    1.000000000000000    0.008799538618934
+        24           28    1.553523415353384    0.061808020149577    1.000000000000000    0.006463741832698
+        25           29    1.553442753718480    0.054446880658228    1.000000000000000    0.003515094092416
+        26           30    1.553354867406181    0.082278859814343    1.000000000000000    0.006336800887576
+        27           31    1.553261813614944    0.083714274867285    1.000000000000000    0.007168621305690
+        28           32    1.553115788177387    0.087413809663965    1.000000000000000    0.007461596162373
+        29           34    1.553038712529532    0.072875350849205    0.446004992241853    0.007019960316602
+        30           35    1.552971534892409    0.060568360619908    1.000000000000000    0.003312951872446
+        31           36    1.552962383877224    0.010697396998981    1.000000000000000    0.001681502349119
+        32           37    1.552955216224838    0.020901563232790    1.000000000000000    0.001438021586584
+        33           38    1.552948885245265    0.016508058285889    1.000000000000000    0.001102585425120
+        34           39    1.552945311740977    0.017735258993115    1.000000000000000    0.001303971897163
+        35           40    1.552940578868579    0.017644799451448    1.000000000000000    0.001447981996940
+        36           41    1.552933036374096    0.032069502368442    1.000000000000000    0.000955723731588
+        37           42    1.552920294028128    0.065885379752529    1.000000000000000    0.001808372574404
+        38           43    1.552906426339476    0.081747092101349    1.000000000000000    0.004068173165548
+        39           44    1.552889011584880    0.091867369596232    1.000000000000000    0.006167392097213
+        40           45    1.552864610054829    0.083011200580520    1.000000000000000    0.006521136374072
+        41           46    1.552824865356846    0.195282531034772    1.000000000000000    0.013439808140180
+        42           47    1.552750502499430    0.066780987188836    1.000000000000000    0.006295238387569
+        43           48    1.552705813990118    0.123692390113457    1.000000000000000    0.009738784512519
+        44           49    1.552638077007670    0.122482920739340    1.000000000000000    0.009322243192567
+        45           51    1.552582996184213    0.139878447175537    0.498620551570837    0.013203800147670
+        46           52    1.552502166396223    0.074133202564809    1.000000000000000    0.003063749286760
+        47           53    1.552434854335169    0.133403268777010    1.000000000000000    0.007878598959442
+        48           54    1.552362981236464    0.139337806956953    1.000000000000000    0.011811467658341
+        49           55    1.552254890759866    0.069361412620569    1.000000000000000    0.008282809006328
+        50           56    1.552131774150140    0.190626965971643    1.000000000000000    0.011337093620894
+        51           57    1.551892110012845    0.215653787375256    1.000000000000000    0.010091994020119
+        52           58    1.551571119078727    0.238221022581276    1.000000000000000    0.008656670899321
+        53           59    1.551065797372937    0.399235161372188    1.000000000000000    0.007728363864842
+        54           60    1.550678618384861    0.537303662056423    1.000000000000000    0.013810600632538
+        55           62    1.550015628973545    0.657622708948841    0.413640551372604    0.007935351793836
+        56           63    1.549814396351799    0.424608870907591    1.000000000000000    0.008900853825868
+        57           64    1.549646202642271    0.128310109938997    1.000000000000000    0.004258760763485
+        58           65    1.549553349151803    0.138549292919479    1.000000000000000    0.002788892863662
+        59           66    1.549365863202445    0.531473929403232    1.000000000000000    0.002560201487319
+        60           67    1.549290061561679    0.212048479510529    1.000000000000000    0.001798858963689
+        61           68    1.549221703508545    0.307340435174667    1.000000000000000    0.001042148191641
+        62           69    1.549167942110441    0.172300166009320    1.000000000000000    0.001333978371086
+        63           70    1.549103587599229    0.239603065858043    1.000000000000000    0.001043359343765
+        64           71    1.549043292336749    0.215022369744741    1.000000000000000    0.002310873619402
+        65           72    1.548995880636108    0.204642020139537    1.000000000000000    0.001013599282981
+        66           73    1.548969193280927    0.170275719251404    1.000000000000000    0.000691646675364
+        67           74    1.548949739550836    0.161457714135494    1.000000000000000    0.000984318736754
+        68           75    1.548929811116040    0.077951824016232    1.000000000000000    0.001104874796919
+        69           76    1.548886714361967    0.162856092666843    1.000000000000000    0.000851761839358
+        70           77    1.548851318351586    0.243853221386303    1.000000000000000    0.000588786444763
+        71           78    1.548834669882664    0.197289019924038    1.000000000000000    0.000871131006085
+        72           79    1.548827361681121    0.104781983127871    1.000000000000000    0.000482070654110
+        73           80    1.548822418206052    0.074667429092445    1.000000000000000    0.000403128675967
+        74           81    1.548814598465096    0.090262711601447    1.000000000000000    0.000458479217214
+        75           82    1.548801999095148    0.128618907054867    1.000000000000000    0.000495232584953
+        76           83    1.548788566584550    0.142763692229461    1.000000000000000    0.000363966250150
+        77           84    1.548780419205193    0.102942304646042    1.000000000000000    0.000192490086958
+        78           85    1.548777372937990    0.054370365731107    1.000000000000000    0.000154195465152
+        79           86    1.548776008668000    0.030793602672749    1.000000000000000    0.000150108105486
+        80           87    1.548774654765491    0.040757957466118    1.000000000000000    0.000152805606931
+        81           88    1.548772769964769    0.059349788998602    1.000000000000000    0.000214542586915
+        82           89    1.548771045853462    0.071572774886821    1.000000000000000    0.000197343572520
+        83           90    1.548769732939591    0.050803564953635    1.000000000000000    0.000200150839057
+        84           91    1.548767965642154    0.065915067691106    1.000000000000000    0.000192565501104
+        85           92    1.548766295410076    0.067552638169710    1.000000000000000    0.000136562554855
+        86           93    1.548765064290127    0.058767721137255    1.000000000000000    0.000095835450387
+        87           94    1.548764295496847    0.035609824665306    1.000000000000000    0.000120998375933
+        88           95    1.548763563451409    0.027113622561588    1.000000000000000    0.000146611644020
+        89           96    1.548762665416757    0.038045449758923    1.000000000000000    0.000155507644791
+        90           97    1.548761801941002    0.052973241315564    1.000000000000000    0.000134376670144
+        91           98    1.548761276671996    0.046502855410731    1.000000000000000    0.000107836372105
+        92           99    1.548760950079776    0.027924566032970    1.000000000000000    0.000131404157458
+        93          100    1.548760542783159    0.027597190808472    1.000000000000000    0.000150583507646
+        94          101    1.548759995773224    0.032095757038010    1.000000000000000    0.000162021321548
+        95          102    1.548759419558401    0.038869581896278    1.000000000000000    0.000100186981163
+        96          103    1.548759123915344    0.031184484327782    1.000000000000000    0.000055509185756
+        97          104    1.548758977407980    0.014257413872230    1.000000000000000    0.000056239169239
+        98          105    1.548758768578791    0.016191145284928    1.000000000000000    0.000076895435878
+        99          106    1.548758445179825    0.022487451252941    1.000000000000000    0.000096335460479
+       100          107    1.548758009641743    0.039338068586941    1.000000000000000    0.000068681724626
+       101          108    1.548757669729863    0.042126439918861    1.000000000000000    0.000046772626499
+       102          109    1.548757480243455    0.030637330702957    1.000000000000000    0.000047932882423
+       103          110    1.548757356488989    0.016909558552226    1.000000000000000    0.000068949210213
+       104          111    1.548757158247741    0.023931832575249    1.000000000000000    0.000078904613371
+       105          112    1.548756845830656    0.040047099096419    1.000000000000000    0.000104497117609
+       106          113    1.548756553903044    0.047218174057912    1.000000000000000    0.000036751522882
+       107          114    1.548756435304948    0.018718162519961    1.000000000000000    0.000043058550972
+       108          115    1.548756353611899    0.008367514748199    1.000000000000000    0.000046411863522
+       109          116    1.548756252999537    0.010673246646792    1.000000000000000    0.000052738029719
+       110          117    1.548756050807028    0.030896376080986    1.000000000000000    0.000053585415011
+       111          118    1.548755724342735    0.061486724646989    1.000000000000000    0.000046015222365
+       112          119    1.548755331303373    0.088891347267265    1.000000000000000    0.000070456070404
+       113          120    1.548754861689980    0.102160224939767    1.000000000000000    0.000117266778328
+       114          121    1.548754176769109    0.149765162772527    1.000000000000000    0.000123486724392
+       115          122    1.548753256262507    0.202395291444199    1.000000000000000    0.000220869717253
+       116          123    1.548752699623663    0.104596378534422    1.000000000000000    0.000073792042326
+       117          124    1.548752556371405    0.023859009248635    1.000000000000000    0.000062330252271
+       118          125    1.548752449732341    0.018237338914829    1.000000000000000    0.000072131146385
+       119          126    1.548752162224568    0.021518426515920    1.000000000000000    0.000084491460405
+       120          127    1.548751945298083    0.201672067646789    1.000000000000000    0.000186453892280
+       121          128    1.548751305180153    0.039049165011010    1.000000000000000    0.000104593588377
+       122          129    1.548751061581591    0.051950796730273    1.000000000000000    0.000087659894068
+       123          130    1.548750725524172    0.130663233776277    1.000000000000000    0.000092106818266
+       124          131    1.548750373106502    0.130063839613536    1.000000000000000    0.000095836723046
+       125          132    1.548749618680979    0.234738734117995    1.000000000000000    0.000091746961869
+       126          133    1.548748899161651    0.348891134758276    1.000000000000000    0.000229530250521
+       127          134    1.548748411725559    0.021782027647481    1.000000000000000    0.000110398109432
+       128          135    1.548748095855399    0.050810110692403    1.000000000000000    0.000059015246331
+       129          136    1.548747979312094    0.017387411155063    1.000000000000000    0.000059270421753
+       130          137    1.548747601511202    0.043982413781201    1.000000000000000    0.000072406566766
+       131          138    1.548746808959164    0.169665903371306    1.000000000000000    0.000121212585499
+       132          139    1.548745783205485    0.291200194061215    1.000000000000000    0.000145544613210
+       133          140    1.548744466790414    0.460205487872369    1.000000000000000    0.000163642443970
+       134          141    1.548743913251763    0.209219797767754    1.000000000000000    0.000039953559769
+       135          142    1.548743812276557    0.019425182756691    1.000000000000000    0.000025316374124
+       136          143    1.548743763062412    0.020886693969060    1.000000000000000    0.000032139412094
+       137          144    1.548743685189055    0.022416099165297    1.000000000000000    0.000033547266642
+       138          145    1.548743595415391    0.027110521046824    1.000000000000000    0.000043180388642
+       139          146    1.548743508782438    0.061237658872295    1.000000000000000    0.000027265364418
+       140          147    1.548743466321026    0.043759844794677    1.000000000000000    0.000026017802872
+       141          148    1.548743425947599    0.034228036722557    1.000000000000000    0.000025530814627
+       142          149    1.548743397816582    0.012925087236675    1.000000000000000    0.000018635077924
+       143          150    1.548743383958212    0.010827525498913    1.000000000000000    0.000022216532406
+       144          151    1.548743374781649    0.014782630629885    1.000000000000000    0.000021332169596
+       145          152    1.548743366284168    0.009140931190013    1.000000000000000    0.000022746958211
+       146          153    1.548743348756024    0.009703293746488    1.000000000000000    0.000024095122936
+       147          154    1.548743324084698    0.011526223989976    1.000000000000000    0.000027469269277
+       148          155    1.548743295310831    0.020749002904291    1.000000000000000    0.000027639138974
+       149          156    1.548743274598613    0.017893655565332    1.000000000000000    0.000022899740819
+       150          157    1.548743266731950    0.010907868975359    1.000000000000000    0.000005751963947
+       151          158    1.548743265189194    0.002119429341755    1.000000000000000    0.000004843912348
+       152          159    1.548743263814040    0.001784447949626    1.000000000000000    0.000006446760907
+       153          160    1.548743260503627    0.002483567796989    1.000000000000000    0.000008914788464
+       154          161    1.548743252516271    0.005236110037332    1.000000000000000    0.000010491489356
+       155          162    1.548743241567268    0.014315362857142    1.000000000000000    0.000046992285473
+       156          163    1.548743223430606    0.010484194520992    1.000000000000000    0.000028820384617
+       157          164    1.548743191018177    0.026817681042542    1.000000000000000    0.000015701596633
+       158          165    1.548743168292462    0.023621965386415    1.000000000000000    0.000022264341722
+       159          166    1.548743135115753    0.037650234737179    1.000000000000000    0.000060146250463
+       160          167    1.548743101987910    0.070788861918626    1.000000000000000    0.000071501780364
+       161          168    1.548743055484018    0.011000216541064    1.000000000000000    0.000025149632746
+       162          169    1.548743015539631    0.021417965090407    1.000000000000000    0.000019774233121
+       163          170    1.548743006719432    0.009973236686852    1.000000000000000    0.000014076172967
+       164          171    1.548742987787344    0.024958686240547    1.000000000000000    0.000028136449456
+       165          172    1.548742956509918    0.032124691947948    1.000000000000000    0.000040206229522
+       166          173    1.548742874219750    0.076518848596194    1.000000000000000    0.000071405221412
+       167          174    1.548742677870106    0.167304175350271    1.000000000000000    0.000112785433200
+       168          175    1.548742406747750    0.282118485983888    1.000000000000000    0.000122630701247
+       169          176    1.548742209579964    0.238987782290951    1.000000000000000    0.000140618560711
+       170          177    1.548742081178037    0.050702311729184    1.000000000000000    0.000039225346172
+       171          178    1.548742059274267    0.048410556230886    1.000000000000000    0.000005915777394
+       172          179    1.548742059047942    0.004166842976304    1.000000000000000    0.000001489602770
+       173          180    1.548742059031837    0.004166842976304    1.000000000000000    0.000000331169645
+Convergence criteria met.
+After: gradient norm = 3.3116964461626634E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-0.2563,0.0299,0.1759,0.0599,-0.0093}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {-0.8083,-1.0221,-0.2068,-0.7415,-1.2194,-0.6243,-0.3364,-0.5986,-1.4324,0.1561,0.0589,-1.5612,0.1677,-1.5422,0.1205,-1.5240,-1.0910,0.9393,-1.3380,-1.2884,0.0798,-1.6118,0.2238,-1.4704,-1.4704,0.2238,-1.6118,0.0798,-1.2884,-1.3380,0.9393,-1.0910,-1.5240,0.1205,-1.5422,0.1677,-1.5612,0.0589,0.1561,-1.4324,-0.5986,-0.3364,-0.6243,-1.2194,-0.7415,-0.2068,-1.0221,-0.8083}
+Activity(exp=0):   {0.0171,-0.4674,-0.8734,-0.7841,-0.6647}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+Suggested variations:
+key=12;0;0, description = Initial model.
+> Optimizing variation "Initial model." (component1-2-variation0).
+>>  Starting new optimization: component1-2-variation0. (2023-04-02 00:46:58.57).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[29,30,31,32,33]}],"bindingModeInteractions":[],"bindingModes":[{},{"mononucleotide":[1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14,17,16,19,18,21,20,23,22,22,23,20,21,18,19,16,17,14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1],"activity":[[24,25,26,27,28]]},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.5487420590318364
+gradient      = {0.0000,-0.0000,0.0000,0.0000,0.0000,0.0000,-0.0000,0.0000,0.0000,-0.0000,0.0000,0.0000,0.0000,-0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-0.0000,-0.0000,0.0000,-0.0000,-0.0000,0.0000,-0.0000,-0.0000,0.0000,-0.0000,-0.0000,0.0000,0.0000,-0.0000,-0.0000}
+gradient norm = 3.311696446163831E-7
+Already at minimum!
+After: gradient norm = 3.311696446163831E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-0.2563,0.0299,0.1759,0.0599,-0.0093}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {-0.8083,-1.0221,-0.2068,-0.7415,-1.2194,-0.6243,-0.3364,-0.5986,-1.4324,0.1561,0.0589,-1.5612,0.1677,-1.5422,0.1205,-1.5240,-1.0910,0.9393,-1.3380,-1.2884,0.0798,-1.6118,0.2238,-1.4704,-1.4704,0.2238,-1.6118,0.0798,-1.2884,-1.3380,0.9393,-1.0910,-1.5240,0.1205,-1.5422,0.1677,-1.5612,0.0589,0.1561,-1.4324,-0.5986,-0.3364,-0.6243,-1.2194,-0.7415,-0.2068,-1.0221,-0.8083}
+Activity(exp=0):   {0.0171,-0.4674,-0.8734,-0.7841,-0.6647}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+  The Likelihood DID NOT improve. Discarding fit component1-2-variation0.
+Suggested variations:
+key=12;1;0, description = Increases flank length.
+> Optimizing variation "Increases flank length." (component1-2-variation1).
+>>  Starting new optimization: component1-2-variation1. (2023-04-02 00:46:58.672).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[29,30,31,32,33]}],"bindingModeInteractions":[],"bindingModes":[{},{"mononucleotide":[1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14,17,16,19,18,21,20,23,22,22,23,20,21,18,19,16,17,14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1],"activity":[[24,25,26,27,28]]},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.5489411675354396
+gradient      = {0.0006,0.0003,0.0009,0.0010,0.0006,0.0004,0.0007,0.0011,0.0014,0.0001,0.0001,0.0012,0.0001,0.0015,0.0001,0.0012,0.0027,0.0000,0.0001,0.0001,0.0001,0.0014,0.0001,0.0013,0.0000,0.0001,0.0002,0.0005,0.0007,-0.0010,-0.0011,-0.0009,0.0003,0.0027}
+gradient norm = 0.005835622346522272
+Starting Function Value: 1.5489411675354396
+Iterations   Fnc. Calls           Likelihood       Distance Moved           Step Alpha        Gradient Norm
+         1            3    1.548816857995886    0.046107389633360    7.901023557639502    0.003902307676161
+         2            4    1.548766831125358    0.021442925047650    1.000000000000000    0.001623453554850
+         3            5    1.548750978166411    0.020627081484963    1.000000000000000    0.000530256618059
+         4            6    1.548748504924071    0.006647841455767    1.000000000000000    0.000475842693514
+         5            7    1.548742201398293    0.020650771657893    1.000000000000000    0.000652856663621
+         6            8    1.548728186549910    0.058247963806159    1.000000000000000    0.001123171534182
+         7            9    1.548724130505775    0.120698840093327    1.000000000000000    0.002844381305895
+         8           10    1.548704846644322    0.021453935437052    1.000000000000000    0.000798164935325
+         9           11    1.548701474045541    0.010169370254593    1.000000000000000    0.000385373626031
+        10           12    1.548700610091267    0.007736778466245    1.000000000000000    0.000122571603559
+        11           13    1.548700455217553    0.001904893809483    1.000000000000000    0.000110337537333
+        12           14    1.548699750167892    0.010917939711297    1.000000000000000    0.000296581832191
+        13           15    1.548698818525678    0.017174532161022    1.000000000000000    0.000463442651317
+        14           16    1.548697338228514    0.032323132933132    1.000000000000000    0.000500230591215
+        15           17    1.548695922777721    0.030901364963918    1.000000000000000    0.000217245493710
+        16           18    1.548695479333920    0.016584517969993    1.000000000000000    0.000087867190858
+        17           19    1.548695391874225    0.003940986942423    1.000000000000000    0.000138992376913
+        18           20    1.548695209532290    0.009959812286852    1.000000000000000    0.000201444595980
+        19           21    1.548694983235238    0.014387078919042    1.000000000000000    0.000188914675131
+        20           22    1.548694642235681    0.031709250545830    1.000000000000000    0.000298371201969
+        21           23    1.548694250431354    0.017753668235338    1.000000000000000    0.000137945884773
+        22           24    1.548693937520747    0.020400895770907    1.000000000000000    0.000105676233860
+        23           25    1.548693836804491    0.009080589098506    1.000000000000000    0.000111597781467
+        24           26    1.548693661255280    0.013680719596716    1.000000000000000    0.000060436247344
+        25           27    1.548693486116247    0.017768495904405    1.000000000000000    0.000065670842890
+        26           28    1.548693408051274    0.008166979590938    1.000000000000000    0.000097296957877
+        27           29    1.548693313422718    0.010323923175179    1.000000000000000    0.000090095217468
+        28           30    1.548693226646849    0.008823237619904    1.000000000000000    0.000029675011082
+        29           31    1.548693187385867    0.006343665445111    1.000000000000000    0.000042288984798
+        30           32    1.548693172259743    0.002620173223001    1.000000000000000    0.000053856604218
+        31           33    1.548693143590333    0.005721526517024    1.000000000000000    0.000048085575870
+        32           34    1.548693104443506    0.007119462488131    1.000000000000000    0.000027948010185
+        33           35    1.548693032398573    0.017026583538500    1.000000000000000    0.000042135360174
+        34           36    1.548692991427445    0.010338767015109    1.000000000000000    0.000067794811146
+        35           37    1.548692941482541    0.013078686184249    1.000000000000000    0.000069578383582
+        36           38    1.548692861073290    0.020031264507681    1.000000000000000    0.000045466824425
+        37           39    1.548692811444880    0.014521060447317    1.000000000000000    0.000026247442509
+        38           40    1.548692798409197    0.003642771616775    1.000000000000000    0.000033733637035
+        39           41    1.548692783161902    0.003747927324317    1.000000000000000    0.000025729398036
+        40           42    1.548692762863369    0.006880457911938    1.000000000000000    0.000010548659162
+        41           43    1.548692751333020    0.005708204681589    1.000000000000000    0.000024143961933
+        42           44    1.548692742680061    0.004736743170949    1.000000000000000    0.000031905359376
+        43           45    1.548692734903733    0.003310203533870    1.000000000000000    0.000023701632905
+        44           46    1.548692729712363    0.001824823685129    1.000000000000000    0.000007411052971
+        45           47    1.548692727748547    0.001294130690272    1.000000000000000    0.000009831296000
+        46           48    1.548692726544219    0.000964303004686    1.000000000000000    0.000016432896617
+        47           49    1.548692724138047    0.001457285813021    1.000000000000000    0.000024074265377
+        48           50    1.548692719788155    0.002270257465820    1.000000000000000    0.000028944693917
+        49           51    1.548692713614990    0.003949786135914    1.000000000000000    0.000023544926083
+        50           52    1.548692709402889    0.004074747626091    1.000000000000000    0.000009109800336
+        51           53    1.548692708226309    0.002038927464144    1.000000000000000    0.000003545413790
+        52           54    1.548692707943800    0.000528526581376    1.000000000000000    0.000006171913029
+        53           55    1.548692707509411    0.000515198523226    1.000000000000000    0.000008391701155
+        54           56    1.548692706578873    0.000810670678251    1.000000000000000    0.000009801005123
+        55           57    1.548692704968240    0.001560738261912    1.000000000000000    0.000007740901846
+        56           58    1.548692703371643    0.002163241473177    1.000000000000000    0.000002905044720
+        57           59    1.548692702563224    0.001604888045682    1.000000000000000    0.000003652312396
+        58           60    1.548692702145797    0.000786208529397    1.000000000000000    0.000005657758845
+        59           61    1.548692701653536    0.000761650653732    1.000000000000000    0.000005810122114
+        60           62    1.548692700898884    0.001388242693384    1.000000000000000    0.000001877348997
+        61           63    1.548692700698141    0.000715422984581    1.000000000000000    0.000001631328938
+        62           64    1.548692700634137    0.000225627370546    1.000000000000000    0.000002494683280
+        63           65    1.548692700493703    0.000455627836302    1.000000000000000    0.000003269340558
+        64           66    1.548692700364588    0.000513169689449    1.000000000000000    0.000002337514635
+        65           67    1.548692700313420    0.000401532951015    1.000000000000000    0.000000562529874
+        66           68    1.548692700307970    0.000401532951015    1.000000000000000    0.000000136506057
+Convergence criteria met.
+After: gradient norm = 1.3650605749674646E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {-0.2514,0.0305,0.1755,0.0581,-0.0127}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.2820,0.2685,0.1007,0.0336}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {-0.7075,-1.1774,-0.1070,-0.8761,-1.3062,-0.6210,-0.3186,-0.6222,-1.4960,0.0982,0.0306,-1.5009,0.1883,-1.6097,0.0887,-1.5349,-1.0061,0.8870,-1.4356,-1.3129,0.0665,-1.6185,0.2101,-1.5262,-1.5262,0.2101,-1.6185,0.0665,-1.3129,-1.4356,0.8870,-1.0061,-1.5349,0.0887,-1.6097,0.1883,-1.5009,0.0306,0.0982,-1.4960,-0.6222,-0.3186,-0.6210,-1.3062,-0.8761,-0.1070,-1.1774,-0.7075}
+Activity(exp=0):   {0.0158,-0.2873,-0.9469,-0.8684,-0.7341}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+  The Likelihood DID NOT improve. Discarding fit component1-2-variation1.
+> No varitions possible for Binding mode 1.
+> Optimizing the full model (component1-4-all).
+>>  Starting new optimization: component1-4-all. (2023-04-02 00:47:07.933).
+>>> Packing before optimization
+Packing:     {"enrichmentModel":[{}],"countTable":[{"h":[34,35,36,37,38]}],"bindingModeInteractions":[],"bindingModes":[{"mononucleotide":[],"activity":[[0,1,2,3,4]]},{"mononucleotide":[6,5,8,7,10,9,12,11,14,13,16,15,18,17,20,19,22,21,24,23,26,25,28,27,27,28,25,26,23,24,21,22,19,20,17,18,15,16,13,14,11,12,9,10,7,8,5,6],"activity":[[29,30,31,32,33]]},{}]}
+
+Value and gradient before optimization:
+=======================================
+value         = 1.5487420590318366
+gradient      = {-0.0000,-0.0000,-0.0000,-0.0000,-0.0000,0.0000,-0.0000,0.0000,0.0000,0.0000,0.0000,-0.0000,0.0000,0.0000,-0.0000,0.0000,0.0000,0.0000,-0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,-0.0000,-0.0000,0.0000,-0.0000,-0.0000,0.0000,-0.0000,-0.0000,0.0000,-0.0000,-0.0000,0.0000,0.0000,-0.0000,-0.0000}
+gradient norm = 2.94269816211863E-6
+Starting Function Value: 1.5487420590318366
+Iterations   Fnc. Calls           Likelihood       Distance Moved           Step Alpha        Gradient Norm
+         1            3    1.548742059022363    0.000006261065857    2.127661592169757    0.000001689531761
+         2            4    1.548742059017559    0.000003374373394    1.000000000000000    0.000001678532364
+         3            5    1.548742058875892    0.000134769868197    1.000000000000000    0.000005267578698
+         4            6    1.548742058669530    0.000238656637407    1.000000000000000    0.000008805638839
+         5            7    1.548742058116408    0.000695730334738    1.000000000000000    0.000013582105635
+         6            8    1.548742056837767    0.001634942119840    1.000000000000000    0.000019959037039
+         7            9    1.548742053567895    0.005174785759855    1.000000000000000    0.000034433875016
+         8           10    1.548742047741424    0.009944593083100    1.000000000000000    0.000045750272465
+         9           11    1.548742037820428    0.011677994100309    1.000000000000000    0.000042532938632
+        10           12    1.548742014759754    0.037826383312731    1.000000000000000    0.000052135740287
+        11           14    1.548742009500030    0.007985047297621    0.428085995867863    0.000029527570443
+        12           15    1.548742005492598    0.000600730849486    1.000000000000000    0.000018501058381
+        13           16    1.548742000950334    0.001237834453339    1.000000000000000    0.000022519697262
+        14           17    1.548741993419324    0.005526319797685    1.000000000000000    0.000038632672759
+        15           18    1.548741973483410    0.021100894175474    1.000000000000000    0.000069665239875
+        16           19    1.548741938378580    0.046781782830259    1.000000000000000    0.000095674123529
+        17           20    1.548741892158939    0.074965458673032    1.000000000000000    0.000087049187033
+        18           21    1.548741872858195    0.087193671583489    1.000000000000000    0.000126361384208
+        19           22    1.548741843198945    0.006223470421775    1.000000000000000    0.000041031712420
+        20           23    1.548741834253119    0.002198920158299    1.000000000000000    0.000014833867026
+        21           24    1.548741828884188    0.001934299284382    1.000000000000000    0.000028233515690
+        22           25    1.548741819622184    0.008699615760085    1.000000000000000    0.000047038304170
+        23           26    1.548741806961697    0.019624886121797    1.000000000000000    0.000051773859888
+        24           27    1.548741790979518    0.032825792290745    1.000000000000000    0.000032299616761
+        25           28    1.548741776598352    0.026749662513187    1.000000000000000    0.000015615972555
+        26           29    1.548741769220132    0.012397821673701    1.000000000000000    0.000038704732171
+        27           30    1.548741756540060    0.017196259232860    1.000000000000000    0.000066209021359
+        28           31    1.548741738475814    0.023367811746830    1.000000000000000    0.000078796315932
+        29           32    1.548741716593711    0.028034688398902    1.000000000000000    0.000058007596187
+        30           33    1.548741703356152    0.020906955198496    1.000000000000000    0.000016581144939
+        31           34    1.548741699274286    0.003791347833293    1.000000000000000    0.000018970959229
+        32           35    1.548741697156064    0.000524070833392    1.000000000000000    0.000031360478180
+        33           36    1.548741692358302    0.001437970852024    1.000000000000000    0.000048393841636
+        34           37    1.548741682007963    0.007944171925339    1.000000000000000    0.000067455118231
+        35           38    1.548741663062400    0.023684059976504    1.000000000000000    0.000077597597053
+        36           39    1.548741639511622    0.042000240474591    1.000000000000000    0.000058199215987
+        37           40    1.548741625736135    0.033271786491499    1.000000000000000    0.000017640128698
+        38           41    1.548741622584888    0.008256866384607    1.000000000000000    0.000010837687072
+        39           42    1.548741621614714    0.000453888571359    1.000000000000000    0.000017678440994
+        40           43    1.548741619905600    0.000736354430375    1.000000000000000    0.000024090028942
+        41           44    1.548741615765950    0.001951110939461    1.000000000000000    0.000030694888580
+        42           45    1.548741609061051    0.007566188256738    1.000000000000000    0.000029217591949
+        43           46    1.548741598530608    0.018002747972697    1.000000000000000    0.000015488754281
+        44           47    1.548741592256489    0.016780111933617    1.000000000000000    0.000007944400845
+        45           48    1.548741590531114    0.003661860837729    1.000000000000000    0.000014011872554
+        46           49    1.548741588003703    0.003772299760173    1.000000000000000    0.000017068589773
+        47           50    1.548741584869103    0.003583214733858    1.000000000000000    0.000012110244268
+        48           51    1.548741581642733    0.004142234404460    1.000000000000000    0.000003708009746
+        49           52    1.548741580500517    0.001398987372128    1.000000000000000    0.000009840371253
+        50           53    1.548741579256372    0.001594306532555    1.000000000000000    0.000014750844814
+        51           54    1.548741577674201    0.002765748500357    1.000000000000000    0.000014988616719
+        52           55    1.548741573499520    0.007785711658673    1.000000000000000    0.000009455251639
+        53           56    1.548741571032902    0.007048056283508    1.000000000000000    0.000001753295252
+        54           57    1.548741570780220    0.000488898295503    1.000000000000000    0.000003070325026
+        55           58    1.548741570581428    0.000457620495524    1.000000000000000    0.000002805302468
+        56           59    1.548741569905931    0.001014671146122    1.000000000000000    0.000002043534439
+        57           60    1.548741569396694    0.001759441763982    1.000000000000000    0.000001295400481
+        58           61    1.548741569217791    0.000628761463798    1.000000000000000    0.000002850595451
+        59           62    1.548741568934419    0.001232202579532    1.000000000000000    0.000002831872078
+        60           63    1.548741568898343    0.001680275694687    1.000000000000000    0.000009330060944
+        61           64    1.548741568799774    0.001074921550678    1.000000000000000    0.000001540927340
+        62           65    1.548741568793672    0.000316487106225    1.000000000000000    0.000000523390125
+        63           66    1.548741568792337    0.000316487106225    1.000000000000000    0.000000287517747
+Convergence criteria met.
+After: gradient norm = 2.875177467134714E-7
+>>> Parameters after optimization
+
+Count Table 0:
+---------------
+h:                 {0.0888,0.2439,0.1718,-0.1157,-0.3887}
+
+Binding mode 0:
+---------------
+Mononucleotide:    {}
+Activity(exp=0):   {-0.0000,0.4130,0.4868,0.2721,0.2374}
+
+Binding mode 1:
+---------------
+Mononucleotide:    {-0.7940,-1.0079,-0.1925,-0.7273,-1.2052,-0.6101,-0.3221,-0.5843,-1.4183,0.1703,0.0732,-1.5469,0.1819,-1.5288,0.1346,-1.5099,-1.0771,0.9536,-1.3241,-1.2745,0.0942,-1.5977,0.2383,-1.4565,-1.4565,0.2383,-1.5977,0.0942,-1.2745,-1.3241,0.9536,-1.0771,-1.5099,0.1346,-1.5288,0.1819,-1.5469,0.0732,0.1703,-1.4183,-0.5843,-0.3221,-0.6101,-1.2052,-0.7273,-0.1925,-1.0079,-0.7940}
+Activity(exp=0):   {0.0002,-0.5059,-0.8274,-0.7836,-0.6321}
+
+Binding mode 2:
+---------------
+Mononucleotide:    {0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000}
+Activity(exp=0):   {0.0000,0.0000,0.0000,0.0000,0.0000}
+
+
+==================================
+== Starts fiting Binding mode 2 ==
+==================================
+> Optimizing h (component2-0-h).
+>>  Starting new optimization: component2-0-h. (2023-04-02 00:47:16.089).
+org.json.JSONException: JSON does not allow non-finite numbers.
+	at org.json.JSONObject.testValidity(JSONObject.java:2011)
+	at org.json.JSONArray.put(JSONArray.java:984)
+	at modelComponents.ModelComponent.JSONArrayConvert_d(ModelComponent.java:762)
+	at modelComponents.ModelComponent.JSONArrayConvert_Ad(ModelComponent.java:776)
+	at modelComponents.BindingMode.saveToJSON_activity_Ad(BindingMode.java:1392)
+	at modelComponents.BindingMode.saveToJSON_parameters(BindingMode.java:1308)
+	at modelComponents.ModelComponent.saveToJSON(ModelComponent.java:159)
+	at modelOptimization.CombinedLikelihood.getJSONState(CombinedLikelihood.java:299)
+	at modelOptimization.CombinedLikelihood.updatePacking(CombinedLikelihood.java:292)
+	at modelOptimization.LikelihoodOptimizer.optimizeCurrentModel(LikelihoodOptimizer.java:653)
+	at modelOptimization.LikelihoodOptimizer.optimizeLikelihood(LikelihoodOptimizer.java:428)
+	at proBoundApp.App.main(App.java:154)
