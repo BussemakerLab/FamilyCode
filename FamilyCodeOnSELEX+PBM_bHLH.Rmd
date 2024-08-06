@@ -1,0 +1,556 @@
+---
+title: "FamilyCode on SELEX and PBM data with pyProBound (bHLH data with De masi et. al., and in house SELEX comparison)"
+output: html_notebook
+---
+### Load SELEX motifs
+```{r}
+library(FamilyCode)
+workDir <- 'SELEX_bHLH/'
+motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
+#motifPoses <- c('P-4', 'P-3','P-2','P-1','P1','P2','P3', 'P4')
+proBound_runDIR <- paste0(workDir, 'HTdata/')
+bHLH_info <- read.csv(file = paste0(workDir, "bHLH_info.csv"), row.names = 1)
+proBound_files <- list.files(proBound_runDIR)
+modelFile_Template <- paste0(proBound_runDIR, '$modelFile$/result/fit.models.consensus.json')
+rows <- c("A", "C", "G", "T")
+
+#getting expeirment identifier from bHLH_info, may vary according to different naming scheme
+bHLH_index <- bHLH_info[,1:2]
+bHLH_index$quality <- 0
+for(i in 1:nrow(bHLH_index)){
+  tryCatch({
+    dir <- paste0(proBound_runDIR,bHLH_index$gene_symbol[i],'_',bHLH_index$study[i])
+    suppressWarnings(quality <- readChar(paste0(dir,'//fitEval.txt'),nchars = 100))
+    quality <- strsplit(quality, ', ')[[1]][1]
+    quality <- strsplit(quality, ' = ')[[1]][2]
+    bHLH_index$quality[i] <- quality
+  }, error = function(e){})
+}
+Motif_Table <- loadMono_motifs(bHLH_index, modelFile_Template, rec_seq = 'CANNTG', pos_index = motifPoses, checkSymmetry = T, withTable = T)
+
+all_mono_motifs <- Motif_Table$motifs
+bHLH_model_info <- Motif_Table$table
+del <- which(bHLH_model_info$symmetry == 0)
+all_mono_motifs <- all_mono_motifs[-del]
+bHLH_model_info <- bHLH_model_info[-del,]
+bHLH_pbAlignment <- read.table(paste0(workDir, 'bHLH.sto'), quote="\"", fill = T)
+name <- apply(bHLH_pbAlignment,1,function(x) strsplit(x[1],'/')[[1]][1])
+colnames(bHLH_pbAlignment) <- c('name','alignment')
+bHLH_pbAlignment$name <- name
+bHLH_sym <- bHLH_model_info[bHLH_model_info$symmetry == 1,]
+#filter for best model of each protein
+bHLH_names <- unique(bHLH_sym$gene_symbol)
+bHLH_index <- data.frame(NULL)
+for(i in 1:length(bHLH_names)){
+  qualities <- bHLH_sym[bHLH_sym$gene_symbol == bHLH_names[i],]
+  add <- qualities[qualities$quality == max(qualities$quality),]
+  bHLH_index <- rbind.data.frame(bHLH_index, add[1,])
+}
+#filter for quality > 0.15
+bHLH_index <- bHLH_index[bHLH_index$quality > 0.15,]
+
+
+#reload mono_motifs
+bHLH_motifs <- loadMono_motifs(bHLH_index, modelFile_Template, rec_seq = 'CANNTG', pos_index = motifPoses, checkSymmetry = F, withTable = F)
+#uniform variable name
+remake <- function(x){
+  out <- list()
+  out$name = strsplit(x$name, '_')[[1]][1]
+  out$matrix = x$matrix
+  return(out)
+}
+bHLH_motifs <- lapply(bHLH_motifs, remake)
+CV_motif_SELEX <- bHLH_motifs
+bHLH_pbAlignment$name <- lapply(bHLH_pbAlignment$name, function(x) strsplit(x, '_')[[1]][1])
+CV_alignment_SELEX <- matchAliMotif(CV_motif_SELEX, bHLH_pbAlignment)
+all_motif_SELEX <- all_mono_motifs
+```
+load in house SELEX results 
+```{r}
+groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
+SELEXFile_Template <- 'SELEXdata/$modelFile$/fit.models.consensus.json'
+SELEX_info <- data.frame(gene_symbol = groups, seq = c('RKSLKPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLRPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLKPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLRPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             '--ARRNERERNRVKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARKNERERNRVKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARRNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARKNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ'),study = 'pb')
+SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'CANNTG', pos_index = c('P-3','P-2','P-1','P1','P2','P3'), checkSymmetry = T, withTable = F, useMode = c(1,2,1,1,1,1,1,1))
+```
+
+### Import library and data
+```{r}
+library(R.utils)
+workDir <- 'PBM_bHLH/'
+#download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
+TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
+Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+#filter for PBM data with Z-scores
+TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
+rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
+#deal with duplicated experiment
+substr(rawPBM[duplicated(rawPBM)],11,11) <- '1'
+colnames(Zscores)[-1] <- rawPBM
+TFDirect.duplicated <- TFDirect
+substr(TFDirect.duplicated$Motif_ID,11,11) <- '1'
+TFDirect <- rbind.data.frame(TFDirect, TFDirect.duplicated)
+#get cisBP entries with PBM Z-scores
+TFDirect <- TFDirect[match(intersect(TFDirect$Motif_ID, rawPBM),TFDirect$Motif_ID),]
+
+
+#filter out demasi mutation sets
+TFdemasi <- TFDirect[TFDirect$MSource_Identifier == 'DeMasi2011',]
+geneInfoUniprot <- read.delim(paste0(workDir,"geneInfoUniprot_all.tsv"))
+geneInfoUniprot$Gene.Names <- paste0(geneInfoUniprot$Gene.Names, ' ')
+gene_ids <- unique(TFDirect[,c('TF_Name', 'TF_Species')])
+geneInfo <- data.frame()
+for(i in 1:nrow(gene_ids)){
+  add <- geneInfoUniprot[grep(paste0(gene_ids$TF_Name[i],' '), geneInfoUniprot$Gene.Names),]
+  if(nrow(add) != 0){
+    add <- add[nchar(add$Sequence) == max(nchar(add$Sequence)),][1,]
+    addSeq <- add$Sequence
+  }else{
+    addSeq <- NA 
+  }
+  Motif <- unique(TFDirect[TFDirect$TF_Name == gene_ids$TF_Name[i],]$Motif_ID)
+  addLine <- data.frame(name = gene_ids$TF_Name[i], seq = addSeq, motif = Motif)
+  geneInfo <- rbind.data.frame(geneInfo, addLine)
+}
+
+geneInfo <- geneInfo[!is.na(geneInfo$seq),]
+
+ali <- read.table(paste0(workDir,"TFhmm.sto"), quote="\"", fill = T)
+ali <- ali[-nrow(ali),]
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'\\|')[[1]][2])
+colnames(ali) <- c('name','alignment')
+keep <- which(substr(ali$alignment, 9,9) == 'E')
+cisBP_alignment <- ali[keep,]
+geneInfo <- geneInfo[keep,]
+#Check if cisBP_alignment and geneInfo matches
+sum(cisBP_alignment$name != geneInfo$name) == 0
+
+geneInfo$name[match(TFdemasi$Motif_ID, geneInfo$motif)] <- paste0(TFdemasi$DBID.1, 'DeMasi')
+
+cisBP_motifs <- list()
+options(warn=0)
+for(i in 1:nrow(geneInfo)){
+  motif <- geneInfo$motif[i]
+  motif <- read.table(paste0(workDir, 'pwms/', motif, '.txt'), header = F)
+  motif <- ddG2frequency(motif)
+  motif[motif < 0.001] <- 0.001#add psuedo count
+  rownames(motif) <- DNA()
+  add <- list()
+  add$gene_symbol <- geneInfo$name[i]
+  add$study <- i
+  add$mode <- 1
+  add$matrix <- as.matrix(motif)
+  cisBP_motifs[[length(cisBP_motifs)+1]] <- add
+  add <- list()
+  #add reverse compliment motif
+  add$gene_symbol <- geneInfo$name[i]
+  add$study <- i
+  add$mode <- -1
+  if(ncol(motif) == 0){
+    rev <- motif
+  }else{
+    rev <- as.matrix(motif)[nrow(motif):1, ncol(motif):1]
+  }
+  rownames(rev) <- DNA()
+  add$matrix <- rev
+  cisBP_motifs[[length(cisBP_motifs)+1]] <- add
+}
+#check if length of cisBP_motif is equal to 2 times geneInfo
+length(cisBP_motifs) == nrow(geneInfo)*2
+DeMasiID <- which(unlist(lapply(cisBP_motifs, function(x) length(grep('DeMasi', x$gene_symbol)) > 0)))
+DeMasi_motifs <- cisBP_motifs[DeMasiID]
+cisBP_motifs <- cisBP_motifs[-DeMasiID]
+
+#align to CANNTG motif
+bHLHseed <- matrix(nrow = 4,ncol = 6,data = c(0,1,0,0,
+                                              1,0,0,0,
+                                              0,0,0,0,
+                                              0,0,0,0,
+                                              0,0,0,1,
+                                              0,0,1,0
+))
+rownames(bHLHseed) <- DNA()
+#Scoring would result in some motif shorter than the seed, those motifs will be discarded. 
+motifScores <- scoreMotifList(cisBP_motifs, bHLHseed, weight = c(1,1,0,0,1,1))
+
+idstds <- unique(motifScores[,1:2])
+all_motifs <- data.frame(NULL)
+for(i in 1:nrow(idstds)){
+  fDT <- motifScores[motifScores$gene_symbol == idstds[i,1],]
+  fDT <- fDT[fDT$study == idstds[i,2],]
+  all_motifs <- rbind.data.frame(all_motifs, fDT[which.min(fDT$score),])
+}
+motifs_arranged <- data.frame(NULL)
+motifScore <- c()
+for(i in 1:length(unique(all_motifs$gene_symbol))){
+  add <- all_motifs[all_motifs$gene_symbol == unique(all_motifs$gene_symbol)[i],]
+  add <- dplyr::arrange(add, score)
+  motifScore <- c(motifScore,add$score[1])
+  motifs_arranged <- rbind.data.frame(motifs_arranged, add)
+}
+#Plot distribution of lowest motif matching score
+plot.ecdf(as.numeric(motifScore))
+```
+```{r}
+#Filter out motifs that do not match well with the seed
+motifTable_baseline <- motifs_arranged[motifs_arranged$score < 1,]
+#Number of unique HD protiens kept:
+length(unique(motifTable_baseline$gene_symbol))
+
+#motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
+cisBP_motifs_baseline <- filterMotifList(motifTable_baseline, cisBP_motifs, 6, motifPoses)
+cisBP_alignment <- cisBP_alignment[match(motifTable_baseline$gene_symbol, cisBP_alignment$name),]
+#check if motif List has same length as alignment
+length(cisBP_motifs_baseline) == nrow(cisBP_alignment)
+del <- which(duplicated(cisBP_alignment$alignment))
+CV_alignment_PBM <- cisBP_alignment[-del,]
+CV_motif_PBM <- cisBP_motifs_baseline[-del]
+all_motif_PBM <- cisBP_motifs_baseline
+```
+load demasi
+```{r}
+DeMasiInfo <- data.frame(name = TFdemasi$DBID.1, seq = 'RRKAATMRERRRRRKVNEAFEVVKQRTC-PNPNQRLPKVEILRSAIDYINNLE', motif = TFdemasi$Motif_ID)
+substr(DeMasiInfo$seq,13,13) <- c('R','T','V','L')
+
+
+#Scoring would result in some motif shorter than the seed, those motifs will be discarded. 
+DeMasimotifScores <- scoreMotifList(DeMasi_motifs, bHLHseed, weight = c(1,1,0,0,1,1))
+
+idstds <- unique(DeMasimotifScores[,1:2])
+Demasi_motifsDT <- data.frame(NULL)
+for(i in 1:nrow(idstds)){
+  fDT <- DeMasimotifScores[DeMasimotifScores$gene_symbol == idstds[i,1],]
+  fDT <- fDT[fDT$study == idstds[i,2],]
+  Demasi_motifsDT <- rbind.data.frame(Demasi_motifsDT, fDT[which.min(fDT$score),])
+}
+
+DeMasi_motifs <- filterMotifList(Demasi_motifsDT, DeMasi_motifs, 6, motifPoses)
+```
+
+###concatnate SELEX and PBM data
+```{r}
+all_motif <- c(all_motif_PBM, all_motif_SELEX)
+CV_alignment <- rbind.data.frame(CV_alignment_PBM, CV_alignment_SELEX)
+CV_motif <- c(CV_motif_PBM, CV_motif_SELEX)
+
+del <- which(duplicated(unlist(lapply(CV_motif, function(x) x$name))))
+CV_motif <- CV_motif[-del]
+CV_alignment <- matchAliMotif(CV_motif, CV_alignment, both = F)
+```
+
+### Show base line accuracy
+```{r}
+evaMatrix <- matrix(nrow = 4, ncol = length(motifPoses), data = 0)
+colnames(evaMatrix) <- motifPoses
+for(pos in motifPoses){
+  ScreenPoses <- c(pos,pos)
+  BaseLines.ddG <- getBaseLineAccuracy(all_motif, pos = ScreenPoses, randomSample = F)
+  colnames(BaseLines.ddG) <- c('pred','true')
+  BaseLines.PFM <- predTrue.ddG2frequency(BaseLines.ddG, PFM = T)
+  plotPredTrue(BaseLines.ddG, xlab = 'Experiment 1', ylab = 'Experiment 2', main = paste0('Pair-wise expeirment comparison'))
+  boxplot(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, member = length(ScreenPoses)*4, mean= F), ylim = c(0,1),
+        main = paste0(pos,' Mean R^2 = ', round(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, 
+                                                          member = length(ScreenPoses)*4, mean= T),4)))
+  plotPredTrue(BaseLines.PFM, xlab = 'Experiment 1', ylab = 'Experiment 2', main = paste0('Base Line PFM at ',pos))
+  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
+  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = length(ScreenPoses)*4, mean= F)^(1/2), ylim = c(0,1),
+        main = paste0(pos, ' Mean PCC = ', round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, 
+                                                     member = length(ScreenPoses)*4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+  evaMatrix[,pos] <- c(round(groupedR2(BaseLines.ddG$pred, 
+        BaseLines.ddG$true, nrow(BaseLines.ddG), throughZero = T), 
+        4), round(RMSD(BaseLines.ddG$pred, BaseLines.ddG$true), 
+        4), round(groupedR2(BaseLines.PFM$pred, 
+        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = T), 
+        4)^(1/2), round(hit,4))
+}
+evaMatrix_BL <- evaMatrix
+
+```
+
+### Make p-val table
+```{r}
+#genreate p-val tablle
+pvalTable <- getPvalTable(CV_motif, Alignment = CV_alignment, pos_index = motifPoses)
+#apply -log(10)
+pvalTable <- -log(pvalTable,10)
+#set NAs to 0
+pvalTable[is.na(pvalTable)] <- 0
+#plot heatmap
+gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
+                  Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+```
+
+### Test on FamilyCode prediction with leave-one-out CV
+Compare with paper: Wetzel, J. L., Zhang, K., & Singh, M. (2022). Learning probabilistic protein–DNA recognition codes from DNA-binding specificities using structural mappings. Genome Research, 32(9), 1776-1786.
+Accuracy measurement in Figure 2
+"PWM F, where entry fbj is the frequency with which nucleotide b is observed in column j in a set of aligned binding sites of that TF. "
+```{r}
+FCpredTrueList <- list()
+for(pos in motifPoses){
+  predTrue <- SVDregression.Iterative.CV(CV_motif,CV_alignment, pos = pos,Ftest_pVal = 0.001, useSimilarAA = T)
+  #delete unsuccessful predictions
+  predTrue <- predTrue[!is.na(predTrue$pred),]
+  FCpredTrueList[[pos]] <- predTrue
+  print(pos)
+  
+}
+evaMatrix <- matrix(nrow = 4, ncol = length(motifPoses), data = 0)
+colnames(evaMatrix) <- motifPoses
+for(pos in motifPoses){
+  predTrue <- FCpredTrueList[[pos]]
+  #delete unsuccessful predictions
+  predTrue <- predTrue[!is.na(predTrue$pred),]
+  
+  predTrue.PFM <- predTrue.ddG2frequency(predTrue, PFM = T)
+  plotPredTrue(predTrue, main = paste0('FamilyCode prediction'))
+  boxplot(groupedR2(predTrue$pred, predTrue$true, member = 4, mean= F), ylim = c(0,1),
+        main = paste0(pos,' Mean R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, 
+                                                          member = 4, mean= T),4)))
+  #plot confidance
+  attr(predTrue, 'confidence') <- attr(predTrue, 'confidence')[attr(predTrue, 'confidence') <= 1]
+  plot(attr(predTrue, 'confidence'),groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F), ylab = 'Predict-True R^2', xlab = 'Confidence score', main = paste0('Confidence at ', pos))
+  legend('bottomright', paste0('R^2 = ', round(groupedR2(groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F),
+                                                     attr(predTrue, 'confidence'), ),4)), bty = 'n')
+  dt <- data.frame(conf = attr(predTrue, 'confidence'), R2 = groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F))
+  lm <- lm(R2~conf, data= dt)
+  abline(lm, col= 'red')
+  
+  plotPredTrue(predTrue.PFM, main = paste0('FamilyCode prediction PFM at ',pos))
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+        main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
+                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+  evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
+        predTrue$true, nrow(predTrue), throughZero = T), 
+        4), round(RMSD(predTrue$pred, predTrue$true), 
+        4), round(groupedR2(predTrue.PFM$pred, 
+        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+        4)^(1/2), round(hit,4))
+}
+evaMatrix_FC <- evaMatrix
+```
+
+### Comparing prediction result with Closest sequence
+from paper:
+Lambert, S. A., Yang, A. W., Sasse, A., Cowley, G., Albu, M., Caddick, M. X., ... & Hughes, T. R. (2019). Similarity regression predicts evolution of transcription factor sequence specificity. Nature genetics, 51(6), 981-989.
+Figure S6/S7
+```{r}
+evaMatrix <- matrix(nrow = 4, ncol = length(motifPoses), data = 0)
+colnames(evaMatrix) <- motifPoses
+for(pos in motifPoses){
+  predTrue <- closestSeqPred(CV_motif,CV_alignment, pos = pos)
+  #delete unsuccessful predictions
+  predTrue <- predTrue[!is.na(predTrue$pred),]
+  predTrue.PFM <- predTrue.ddG2frequency(predTrue, PFM = T)
+  
+  plot.ecdf(predTrue$similarity)
+  plotPredTrue(predTrue, main = paste0('Closest sequence prediction -ΔΔG/RT at ',pos))
+  boxplot(groupedR2(predTrue$pred, predTrue$true, member = 4, mean= F), ylim = c(0,1),
+        main = paste0(pos,' Mean R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, 
+                                                          member = 4, mean= T),4)))
+  
+  plotPredTrue(predTrue.PFM, main = paste0('Closest sequence prediction PFM at ',pos))
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+        main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
+                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+  evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
+      predTrue$true, nrow(predTrue), throughZero = T), 
+      4), round(RMSD(predTrue$pred, predTrue$true), 
+      4), round(groupedR2(predTrue.PFM$pred, 
+      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+      4)^(1/2), round(hit,4))
+}
+evaMatrix_CS <- evaMatrix
+```
+
+### Comparing prediction result with Similarity regression
+from paper:
+Lambert, S. A., Yang, A. W., Sasse, A., Cowley, G., Albu, M., Caddick, M. X., ... & Hughes, T. R. (2019). Similarity regression predicts evolution of transcription factor sequence specificity. Nature genetics, 51(6), 981-989.
+Figure S6/S7
+
+```{r}
+evaMatrix <- matrix(nrow = 4, ncol = length(motifPoses), data = 0)
+colnames(evaMatrix) <- motifPoses
+for(pos in motifPoses){
+  del <- which(duplicated(cisBP_alignment$alignment))
+  CV_alignment <- cisBP_alignment[-del,]
+  mod_alignment <- CV_alignment
+  mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
+  CV_motif <- cisBP_motifs_baseline[-del]
+  predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+  #delete unsuccessful predictions
+  predTrue <- predTrue[!is.na(predTrue$pred),]
+  predTrue.PFM <- predTrue.ddG2frequency(predTrue, PFM = T)
+  
+  plot.ecdf(predTrue$similarity)
+  plotPredTrue(predTrue, main = paste0('Similarity regression prediction -ΔΔG/RT at ',pos))
+  boxplot(groupedR2(predTrue$pred, predTrue$true, member = 4, mean= F), ylim = c(0,1),
+        main = paste0(pos,' Mean R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, 
+                                                          member = 4, mean= T),4)))
+  
+  plotPredTrue(predTrue.PFM, main = paste0('Similarity regression prediction PFM at ',pos))
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+        main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
+                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+  evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
+    predTrue$true, nrow(predTrue), throughZero = T), 
+    4), round(RMSD(predTrue$pred, predTrue$true), 
+    4), round(groupedR2(predTrue.PFM$pred, 
+    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+    4)^(1/2), round(hit,4))
+}
+evaMatrix_SR <- evaMatrix
+```
+```{r}
+evaMatrix <- rbind.data.frame(evaMatrix_BL, evaMatrix_FC,  evaMatrix_SR, evaMatrix_CS)
+evaMatrix <- evaMatrix[c((1:4)*4-3, (1:4)*4-2, (1:4)*4-1,(1:4)*4), ]
+write.csv(evaMatrix, 'evaMatrix_bHLH_SELEX+PBM.csv')
+```
+
+
+###Train model with all entries of PBM bHLH data
+```{r}
+svdModel <- makeSVDModel(CV_motif, CV_alignment, Positions = c('P-3','P-2','P-1','P1','P2','P3'))
+```
+
+### Load De Masi motifs
+```{r}
+DeMasiInfo <- data.frame(name = TFdemasi$DBID.1, seq = 'RRKAATMRERRRRRKVNEAFEVVKQRTC-PNPNQRLPKVEILRSAIDYINNLE', motif = TFdemasi$Motif_ID)
+substr(DeMasiInfo$seq,13,13) <- c('R','T','V','L')
+
+```
+
+### DeMasi Baseline
+```{r}
+Demasi1 <- DeMasi_motifs[1:4]
+Demasi2 <- DeMasi_motifs[5:8]
+true <- lapply(Demasi1, function(x) frequency2ddG(x$matrix[,c('P-1','P1')]))
+
+pred <- lapply(Demasi2, function(x) frequency2ddG(x$matrix[,c('P-1','P1')]))
+
+
+predTrueBaseline <- data.frame(pred = as.numeric(unlist(pred)), true = as.numeric(unlist(true)))
+plotPredTrue(predTrueBaseline, xlab = 'DeMasi et. al., (rep1)', ylab = 'DeMasi et. al., (rep2)', main = paste0('Pair-wise experiment comparison at P-/+1'))
+
+```
+
+### Predict for Demasi motifs
+```{r}
+pred <- lapply(DeMasiInfo$seq, function(x) SVDmodelPredPSAM(svdModel[c('P-1','P-1')], x))
+pred <- lapply(pred, frequency2ddG)
+true <- lapply(DeMasi_motifs, function(x) x$matrix[,c('P-1','P-1')])
+true <- lapply(true, frequency2ddG)
+predTrueDeMasi <- data.frame(pred = as.numeric(unlist(pred)), true = as.numeric(unlist(true)))
+plotPredTrue(predTrueDeMasi[c(1:24),], main = paste0('FamilyCode prediction at P-/+1'))
+plotPredTrue(predTrueDeMasi[c(33:56),], main = paste0('FamilyCode prediction -ΔΔG/RT at P-/+1'))
+predTrue1 <- predTrueDeMasi[c(33:56),]
+plotPredTrue(predTrue1, xlab = 'DeMasi et. al.,', ylab = 'Predicted', main = paste0('FamilyCode prediction'))
+```
+
+### Similarity regression for De masi
+```{r}
+mod_alignment <- CV_alignment
+mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
+
+DeMasiAli <- data.frame(name = DeMasiInfo$name, alignment = paste0(substr(DeMasiInfo$seq,1,34), '-','-',substr(DeMasiInfo$seq,35,53)))
+pred_motifs <- SRpredPSAM(DeMasiAli, CV_motif, mod_alignment, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+
+pred <- lapply(pred_motifs, function(x) x$matrix[,c('P-1','P1')])
+pred <- lapply(pred, frequency2ddG)
+true <- lapply(DeMasi_motifs, function(x) x$matrix[,c('P-1','P1')])
+true <- lapply(true, frequency2ddG)
+predTrueDeMasi <- data.frame(pred = as.numeric(unlist(pred)), true = as.numeric(unlist(true)))
+plotPredTrue(predTrueDeMasi[c(33:56),], main = paste0('Similarity regression prediction -ΔΔG/RT at P-/+1'))
+```
+
+### Test on in house SEELX data
+```{r}
+test_motifs <- SELEX_motifs[-c(1,5)]
+test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c(
+                             'RKSLRPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLKPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLRPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             '--ARKNERERNRVKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARRNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARKNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ')
+                             )
+#Predict binding motifs for test set
+pred <- lapply(test_alignment$alignment, function(x) SVDmodelPredPSAM(svdModel[c('P-1','P-1')], x))
+pred <- lapply(pred, frequency2ddG)
+true <- lapply(test_motifs, function(x) x$matrix[,c('P-1','P-1')])
+true <- lapply(true, frequency2ddG)
+predTrueSELEX <- data.frame(pred = as.numeric(unlist(pred)), true = as.numeric(unlist(true)))
+
+plotPredTrue(predTrueSELEX, xlab = 'HES2 and ASCL2 mutants', ylab = 'Predicted', main = paste0('FamilyCode prediction'))
+predTrue2 <- predTrueSELEX
+```
+
+```{r}
+svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
+svdModelpreTrain <- trainSVD.Iterative(svd, CV_alignment, Ftest_pVal = 0.001)
+keyPos <- svdModelpreTrain$keyPos
+keyPos <- lapply(keyPos, function(x) c(x,5))
+#svdModel <- trainSVD(svd, CV_alignment, no.keyPos = unlist(lapply(keyPos,length)), keyPos = keyPos)
+svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(2,1,1), keyPos = list(c(13,5), c(13), c(13)))
+#Predict binding motifs for test set
+pred_motifs <- predict(svdModel, test_alignment[c(1,3,4,6),], zero = 0.001, useSimilarAA = T)
+#Comparing between true and predicted testing set motifs 
+true <- frequency2ddG(gene2pos(test_motifs[c(1,3,4,6)], pos = 'P-1'))
+pred <- frequency2ddG(pred_motifs)
+predTrue <- data.frame(true = unlist(as.numeric(true)), pred = unlist(as.numeric(pred)))
+
+plotPredTrue(predTrue, main = paste0('FamilyCode prediction -ΔΔG/RT at P-/+1'))
+```
+
+### combine Demasi and HES2ASCL2 validation
+```{r}
+predTrue <- rbind.data.frame(predTrue1, predTrue2)
+plotPredTrue(predTrue, xlab = 'Experiment', ylab = 'Predicted', main = paste0('FamilyCode prediction -ΔΔG/RT at P-/+1'))
+```
+
+### score PBM with cisBP motif with probound
+```{r}
+mkdirs(paste0(workDir,'JSONs_FC'))
+CTs <- list.files(paste0(workDir,'CountTables/'))
+library(jsonlite)
+sampleJSON <- 'sample.json'
+json <- fromJSON(sampleJSON)
+json$modelSettings$bindingModes$size <- 6
+for(i in 1:nrow(CV_alignment)){
+  testID <- CV_alignment$name[i]
+  motifID <- TFDirect$Motif_ID[TFDirect$TF_Name == testID]
+  if(length(motifID) == 0){
+    next()
+  }
+  if(length(which(paste0(motifID[1],'_CT.tsv') == CTs)) == 0){
+    next()
+  }
+  svdModel <- makeSVDModel(CV_motif[-i], CV_alignment[-i,], Positions = motifPoses)
+  predModel <- SVDmodelPredPSAM(svdModel, CV_alignment$alignment[i])
+  mononucleotide_logo(frequency2ddG(predModel))
+  pwm <- apply(frequency2ddG(predModel), 2, function(x) x-max(x))
+  json$coefficients$bindingModes$mononucleotide <- list(as.numeric(pwm))
+  outJSON <- paste0(workDir,'JSONs_FC/',motifID[1],'.json')
+  write(toJSON(json, pretty = TRUE), outJSON)
+  print(paste0(i,': ', nrow(CV_alignment)))
+}
+```
+
+```{r}
+FCpwmPCC <- read.table(paste0(workDir,"FCpwmPCC.txt"), quote="\"", comment.char="")
+median(FCpwmPCC$V1)
+median(pbPCC$V1)
+median(cisBPPCC$V1)
+
+boxplot(FCpwmPCC$V1, pbPCC$V1, cisBPPCC$V1, names = c('FamilyCode','Probound', 'cisBP'))
+```
+
