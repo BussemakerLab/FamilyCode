@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
-devtools::install_github('ShaoxunLiu/FCpackage')
+#devtools::install_github('ShaoxunLiu/FCpackage')
 library(FamilyCode)
 ```
 ### Load motifs
@@ -597,6 +597,10 @@ mononucleotide_logo(frequency2ddG(mono))
 result <- readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('HES2 replicate'))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('ASCL2 replicate'))
 ```
 
 ## Panel E
@@ -611,12 +615,12 @@ proportions <- c(proportions[1:3], exp(1.788), 8.09,
                  proportions[4:6],exp(1.956), 28.41,
                  proportions[7:9], exp(-3.948),0.023,
                  proportions[10:12], exp(-2.15), 0.135)
-names <- c(rep('ASCL2_WT',5),rep('ASCL2_R5K',5),rep('ASCL2_V13R',5),rep('ASCL2_Double',5))
+names <- c(rep('WT',5),rep('R5K',5),rep('V13R',5),rep('Double',5))
 names <- as.factor(names)
 cols <- c(rep('#6cab42',1),rep('#87eff2',1),rep('#f9d85b',1),rep('#c4560c',1))
 dt <- data.frame(name = names, prop = proportions)
 dt$prop <- log(dt$prop)
-dt$name <- factor(dt$name, levels = c('ASCL2_WT', 'ASCL2_R5K', 'ASCL2_V13R', 'ASCL2_Double'))
+dt$name <- factor(dt$name, levels = c('WT', 'R5K', 'V13R', 'Double'))
 
 
 p <- ggplot(dt, aes(x = name, y = prop, fill = name, color = name)) +
@@ -625,22 +629,23 @@ p <- ggplot(dt, aes(x = name, y = prop, fill = name, color = name)) +
   scale_color_manual(values = cols, name = "Name") +
   labs(
     x = "",
-    y = "-ΔΔG/RT"
+    y = "-ΔΔG/RT (GC->CG)",
+    size =15
   ) +
   theme(legend.position = "none",
-    axis.text.x = element_text(face = 'bold',color=cols, size = 12),
+    axis.text.x = element_text(face = 'bold',color=cols, size = 15),
     panel.background = element_blank(),     # Remove panel background
     panel.grid.major = element_blank(),     # Remove major gridlines
     panel.grid.minor = element_blank(),     # Remove minor gridlines
     plot.background = element_blank(),
     panel.border = element_rect(colour = "black", fill=NA, size=0.5)# Remove plot background
   ) +
-  geom_signif(comparisons = list(c("ASCL2_R5K", "ASCL2_WT"),
-                                 c("ASCL2_V13R", "ASCL2_Double"),
-                                 c("ASCL2_R5K", "ASCL2_V13R"),
-                                 c("ASCL2_WT", "ASCL2_V13R"),
-                                 c("ASCL2_WT", "ASCL2_Double"),
-                                 c("ASCL2_R5K", "ASCL2_Double")
+  geom_signif(comparisons = list(c("R5K", "WT"),
+                                 c("V13R", "Double"),
+                                 c("R5K", "V13R"),
+                                 c("WT", "V13R"),
+                                 c("WT", "Double"),
+                                 c("R5K", "Double")
                                  ),
               map_signif_level=TRUE, color = 'black',  step_increase = 0.1)
 plot(p)
@@ -658,6 +663,15 @@ keyPos <- lapply(keyPos, function(x) c(x,5))
 #svdModel <- trainSVD(svd, CV_alignment, no.keyPos = unlist(lapply(keyPos,length)), keyPos = keyPos)
 svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(2,1,1), keyPos = list(c(13,5), c(13), c(13)))
 #Predict binding motifs for test set
+test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c(
+                             'RKSLRPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLKPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLRPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             '--ARKNERERNRVKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARRNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARKNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ')
+                             )
+test_motifs <- SELEX_motifs[-c(1,5)]
 pred_motifs <- predict(svdModel, test_alignment[], zero = 0.001, useSimilarAA = T)
 #Comparing between true and predicted testing set motifs 
 
@@ -686,6 +700,18 @@ predTrueAscl2 <- data.frame(pred = as.numeric(unlist(pred[,4:6])), true = as.num
 plotPredTrue(predTrueAscl2,  xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT', main = paste0('FamilyCode on ASCL2 mutants'))
 ```
 
+### checking with EMSA measured ddGs
+```{r}
+dm <- matrix(nrow = 5, ncol = 4, data = dt$prop)
+meanddGs <- apply(dm, 2, mean)
+predddG <- pred[3,4:6] - pred[2,4:6]
+EMSAdddG <- meanddGs[2:4] - meanddGs[1]
+predTrue <- data.frame(pred = predddG, true = EMSAdddG)
+plot(EMSAdddG, predddG, xlab = 'EMSA measrued -ΔΔΔG', ylab = 'family code predicted -ΔΔΔG', main = 'EMSA measured vs. family code predicted -ΔΔΔG')
+abline(lm(pred~true, predTrue), col = '#666666', lty = 2)
+legend('topleft', paste0('R^2 = ', round(groupedR2(predTrue$pred, predTrue$true, nrow(predTrue)),4), '\n',
+                         'RMSD = ', round(RMSD(predTrue$pred,predTrue$true),4)), bty = 'n')
+```
 #R2 p-value
 Calculating bootstrap p-values for R2s
 ```{r}

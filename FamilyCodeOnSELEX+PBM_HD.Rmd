@@ -312,6 +312,8 @@ for(pos in motifPoses){
 }
 evaMatrix <- matrix(nrow = 4, ncol = length(motifPoses), data = 0)
 colnames(evaMatrix) <- motifPoses
+PFMR2 <- matrix(ncol = 8, nrow = nrow(FCpredTrueList[[1]])/4, data = NA)
+i = 1
 for(pos in motifPoses){
   predTrue <- FCpredTrueList[[pos]]
   #delete unsuccessful predictions
@@ -331,7 +333,7 @@ for(pos in motifPoses){
   lm <- lm(R2~conf, data= dt)
   abline(lm, col= 'red')
   
-  plotPredTrue(predTrue.PFM, main = paste0('FamilyCode prediction PFM at ',pos))
+  plotPredTrue(predTrue.PFM, main = paste0('FamilyCode PFM at ',pos), xlab = 'Expermental', ylab = 'Predicted')
   hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
   boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
         main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
@@ -342,7 +344,40 @@ for(pos in motifPoses){
         4), round(groupedR2(predTrue.PFM$pred, 
         predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
         4)^(1/2), round(hit,4))
+  addData <- groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2)
+  PFMR2[1:length(addData),i] <- addData
+  i <- i + 1
 }
+PFMR2 <- as.data.frame(PFMR2)
+colnames(PFMR2) <- motifPoses
+library(tidyr)
+data_long <- PFMR2 %>%
+  gather(key = "SampleGroup", value = "Value")
+
+data_long$SampleGroup <- factor(data_long$SampleGroup, levels = motifPoses)
+
+ggplot(data_long, aes(x = SampleGroup, y = Value, fill = SampleGroup)) +
+  geom_lv() +
+  stat_summary(
+    fun = median, 
+    geom = "crossbar", 
+    width = 1, 
+    color = "black",      # Set the median bar color here
+    size = 0.2          # Set the thickness of the median bar
+  ) +
+  scale_fill_manual(values = c(rep("grey80",8))) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",           # Removes the legend
+    panel.background = element_rect(fill = "white"),  # Changes the plot background to white
+    plot.background = element_rect(fill = "white"),
+    panel.grid.major = element_blank(),               # Removes major grid lines
+    panel.grid.minor = element_blank() # Changes the entire plot's background to white
+  ) +
+  labs(title = "",
+       x = "Motif positions",
+       y = "PCC between predicted and experimental PFM")
+
 evaMatrix_FC <- evaMatrix
 ```
 
