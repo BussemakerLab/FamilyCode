@@ -13,6 +13,6 @@ Supplemental Data S2: Interactive 3D representations of tetrahedrons. Open HTML 
 
 Supplemental Data S3: Empirical cumulative distribution of tetrahedral position along each principal component direction for various amino-acid positions. Related to Figure 4B.
 
-Supplemental Data S4: Statistical significance of ANOVA test of PCs at DNA position –2/+2 and –3/+3. Related to Figure 4C.
+Supplemental Data S4: Statistical significance of ANOVA test of PCs at DNA position –1/+1, –2/+2 and –3/+3. 
 
 Supplemental Data S5: JSON configuration file used for all ProBound analyses
