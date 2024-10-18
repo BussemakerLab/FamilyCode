@@ -355,7 +355,8 @@ data_long <- PFMR2 %>%
   gather(key = "SampleGroup", value = "Value")
 
 data_long$SampleGroup <- factor(data_long$SampleGroup, levels = motifPoses)
-
+library(ggplot2)
+library(lvplot)
 ggplot(data_long, aes(x = SampleGroup, y = Value, fill = SampleGroup)) +
   geom_lv() +
   stat_summary(
