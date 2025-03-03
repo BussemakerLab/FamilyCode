@@ -1,0 +1,2024 @@
+---
+title: "FamilyCode Figures"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+#devtools::install_github('ShaoxunLiu/FCpackage')
+library(FamilyCode)
+```
+# Load bHLH SELEX data
+```{r}
+library(FamilyCode)
+workDir <- 'SELEX_bHLH/'
+motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
+```
+
+1: Probound_runDir: Directory containing the ProBound results each in a folder.
+2: bHLH_info: CSV table containing experiment information. 
+3: bHLH_ali: Alignment file
+
+```{r}
+proBound_runDIR <- paste0(workDir, 'HTdata/')
+bHLH_info <- read.csv(file = paste0(workDir, "bHLH_info.csv"), row.names = 1)
+```
+
+```{r}
+proBound_files <- list.files(proBound_runDIR)
+modelFile_Template <- paste0(proBound_runDIR, '$modelFile$/result/fit.models.consensus.json')
+rows <- c("A", "C", "G", "T")
+blank <- data.frame(P00 = c(1,1,1,1), P0 = c(1,1,1,1))
+
+#getting expeirment identifier from bHLH_info, may vary according to different naming scheme
+bHLH_index <- bHLH_info[,1:2]
+```
+
+This step can be ignored if no quality measurements are performed, or when each sample protein is only appearing once.
+
+```{r}
+bHLH_index$quality <- 0
+for(i in 1:nrow(bHLH_index)){
+  tryCatch({
+    dir <- paste0(proBound_runDIR,bHLH_index$gene_symbol[i],'_',bHLH_index$study[i])
+    suppressWarnings(quality <- readChar(paste0(dir,'//fitEval.txt'),nchars = 100))
+    quality <- strsplit(quality, ', ')[[1]][1]
+    quality <- strsplit(quality, ' = ')[[1]][2]
+    bHLH_index$quality[i] <- quality
+  }, error = function(e){})
+}
+```
+
+
+Reads in all data of bHLH samples and compares the consensus sequence recognition score between the binding models output from ProBound. For bHLH, a logical value is given for symmetry. The motif with the highest consensus sequence recognition score is saved in the list of mono_motifs. The mono_motifs contains binding motifs in frequency format.
+
+```{r}
+Motif_Table <- loadMono_motifs(bHLH_index, modelFile_Template, rec_seq = 'CANNTG', pos_index = motifPoses, checkSymmetry = T, withTable = T)
+
+all_mono_motifs <- Motif_Table$motifs
+bHLH_model_info <- Motif_Table$table
+```
+
+
+Input Alignment file generated with Clustal Omega and select the aligned DNA-binding Domain of the family.
+
+```{r}
+bHLH_pbAlignment <- read.table(paste0(workDir, 'bHLH.sto'), quote="\"", fill = T)
+name <- apply(bHLH_pbAlignment,1,function(x) strsplit(x[1],'/')[[1]][1])
+colnames(bHLH_pbAlignment) <- c('name','alignment')
+bHLH_pbAlignment$name <- name
+```
+
+For a different sample set, likely a different family, You can start from this point with properly structured list of mono_motifs and data frame of Alignment
+
+
+Family code uses the bHLH_index data frame to load models. Filter rows according to recorded parameters and reload mono_motifs. Here, the data frame: bHLH_model_info has contains parameters and the first two rows are in the same format as the bHLH_index data frame.
+
+```{r}
+#filter for symmetry
+bHLH_sym <- bHLH_model_info[bHLH_model_info$symmetry == 1,]
+#filter for best model of each protein
+bHLH_names <- unique(bHLH_sym$gene_symbol)
+bHLH_index <- data.frame(NULL)
+for(i in 1:length(bHLH_names)){
+  qualities <- bHLH_sym[bHLH_sym$gene_symbol == bHLH_names[i],]
+  add <- qualities[qualities$quality == max(qualities$quality),]
+  bHLH_index <- rbind.data.frame(bHLH_index, add[1,])
+}
+#filter for quality > 0.15
+bHLH_index <- bHLH_index[bHLH_index$quality > 0.15,]
+
+
+#reload mono_motifs
+bHLH_motifs <- loadMono_motifs(bHLH_index, modelFile_Template, rec_seq = 'CANNTG', pos_index = motifPoses, checkSymmetry = F, withTable = F)
+#uniform variable name
+CV_motif <- bHLH_motifs
+CV_alignment <- matchAliMotif(CV_motif, bHLH_pbAlignment)
+```
+
+# Figure 1
+```{r Figure 1}
+library(readr)
+library(R.utils)
+
+mkdirs('logos')
+for(i in 1:nrow(bHLH_index)){
+  JSON_Lines <- readLines(paste0("HTdata/", bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
+  mono <- JSON2Matrix(JSON_Lines, mode = bHLH_index$motif_model[i])
+  plot <- mononucleotide_logo(mono, axes = F)
+  png(paste0('logos/',bHLH_index$gene_symbol[i],'.png'))
+  plot(plot)
+  dev.off()
+}
+```
+
+# Figure 2
+
+```{r 2A}
+library(plotly)
+AAPosition <- 13
+motifPosition <- 'P-1'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+plot%>%layout(scene=scene)
+```
+
+```{r 2B}
+library(plotly)
+AAPosition <- 5
+motifPosition <- 'P-1'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+plot%>%layout(scene=scene)
+```
+
+```{r 2C}
+library(plotly)
+AAPosition <- 13
+motifPosition <- 'P-3'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+plot%>%layout(scene=scene)
+```
+
+```{r 2D, S7A}
+#genreate p-val tablle
+pvalTable <- getPvalTable(CV_motif, Alignment = CV_alignment, pos_index = motifPoses)
+#apply -log(10)
+pvalTable <- -log(pvalTable,10)
+#set NAs to 0
+pvalTable[is.na(pvalTable)] <- 0
+#plot heatmap
+gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
+                  Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+```
+
+
+# Figure S1
+```{r S1}
+colorCode <- pvalTable$`P-1`
+colorCode[is.na(colorCode)] <- median(colorCode[!is.na(colorCode)])
+max <- max(colorCode)
+colorList <- colorCode/max*255
+colorList <- c(colorList[1:29],0,0,0,0,colorList[30:53])
+
+complexSample <- 'bHLH_processed.pse'
+addColorTemplate <- 'color 0x$colorCode$, polymer.protein and resi $resiNum$'
+script <- paste('load ', complexSample, sep = '')
+for(i in 1:length(colorList)){
+  colorCode <- rgb(colorList[i], 0, (255-colorList[i]), maxColorValue = 255)
+  colorCode <- gsub('#','',colorCode)
+  addScript <- gsub('\\$colorCode\\$',colorCode,addColorTemplate)
+  addScript <- gsub('\\$resiNum\\$', i, addScript)
+  script <- c(script, addScript)
+}
+run.pymol(pymol.dir = 'E:/pymol/pymol_app/PyMOLWin.exe',script = script)
+
+```
+
+# Figure S2
+```{r S2B}
+AAPosition <- 20
+motifPosition <- 'P-1'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+plot%>%layout(scene=scene)
+
+#AAs <- unique(colnames(AAbp_Matrix))
+#plot(1)
+#legend(x = "topleft", legend = AAs, col = AAcolor(AAs), pch = 19, cex = 1, bty = 'n')
+```
+
+```{r S2D}
+posMatrix <- gene2pos(CV_motif, pos = 'P-1')
+P22 <- substr(CV_alignment$alignment,22, 22)
+P50 <- substr(CV_alignment$alignment,50, 50)
+
+table(AAclassify(P22), AAclassify(P50))
+Encode22 <- attr(AAclassify(P22), 'encode')
+Encode50 <- attr(AAclassify(P50), 'encode')
+Interactions <- AAinteraction(Encode22, Encode50)
+table(Interactions, apply(posMatrix, 2, function(x) rownames(posMatrix)[which.max(x)]))
+
+paste0(Interactions, '=>',apply(posMatrix, 2, function(x) rownames(posMatrix)[which.max(x)]))
+paste0(AAclassify(P22), '+',AAclassify(P50),'=',Interactions)
+paste0(P22, '+',P50,'=',Interactions,  '=>',apply(posMatrix, 2, function(x) rownames(posMatrix)[which.max(x)]))
+
+colnames(posMatrix) <- Interactions
+colnames(posMatrix)[colnames(posMatrix) == 'h-bond'] <- 'Q'
+colnames(posMatrix)[colnames(posMatrix) == 'electro-static'] <- 'E'
+colnames(posMatrix)[colnames(posMatrix) == 'hydrophobic'] <- 'L'
+colnames(posMatrix)[colnames(posMatrix) == 'repel'] <- 'W'
+
+plot <- plot_tetrahedron(posMatrix, color = T, vertex = F, size = 10)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+plot%>%layout(scene=scene)
+#plot(1)
+
+#legend(x = "topleft", legend = c('H-bond','Electro-static', 'Hydrophobic', 'Repel'), col = AAcolor(c('Q', 'E', 'L', 'W')), pch = 19, cex = 1, bty = 'n')
+```
+
+# Figure 3
+```{r 3A}
+library(plotly)
+AAPosition <- 13
+motifPosition <- 'P-1'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+Rmatirx <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'R']
+RTM <- matrix2tetrahedron(Rmatirx)
+meanPointR <- apply((RTM), 2, function(x) mean(x))
+Rmean <- tetrahedron2matrix(meanPointR)
+svd <- FamilyCode::matrixSVD(AAbp_Matrix)
+Allmean <- tetrahedron2matrix(svd$tetra_mean)
+AAbp_Matrix <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'R']
+AAbp_Matrix <- cbind.data.frame(AAbp_Matrix, X = Allmean)
+connect <- cbind.data.frame(Rmean = meanPointR, Allmean = svd$tetra_mean)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+
+plotTest <- plot_tetrahedron(AAbp_Matrix, color = T, size = 10)
+plotTest%>%
+  add_trace(connect,x = as.numeric(connect[1,1:2]),
+            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[1,1], y= connect[2,1], z= connect[3,1],
+    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
+    sizeref= 0.5,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%layout(scene=scene)
+
+rownames(Rmean) <- c('A','C','G','T')
+mononucleotide_logo(Rmean)
+
+```
+
+```{r 3B}
+library(plotly)
+AAPosition <- 13
+motifPosition <- 'P-1'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+Rmatirx <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'V']
+RTM <- matrix2tetrahedron(Rmatirx)
+meanPointR <- apply((RTM), 2, function(x) mean(x))
+Rmean <- tetrahedron2matrix(meanPointR)
+svd <- FamilyCode::matrixSVD(AAbp_Matrix)
+Allmean <- tetrahedron2matrix(svd$tetra_mean)
+AAbp_Matrix <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'V']
+AAbp_Matrix <- cbind.data.frame(AAbp_Matrix, X = Allmean)
+connect <- cbind.data.frame(Rmean = meanPointR, Allmean = svd$tetra_mean)
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+
+plotTest <- plot_tetrahedron(AAbp_Matrix, color = T, size = 10)
+plotTest%>%
+  add_trace(connect,x = as.numeric(connect[1,1:2]),
+            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 10),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[1,1], y= connect[2,1], z= connect[3,1],
+    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
+    sizeref= 0.5,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%layout(scene=scene)
+
+rownames(Rmean) <- c('A','C','G','T')
+mononucleotide_logo(log(Rmean))
+
+```
+
+```{r 3C}
+AAPosition <- 13
+motifPosition <- 'P-1'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+
+svd <- FamilyCode::matrixSVD(AAbp_Matrix)
+vCoord <- svd$v
+meanPointAll <- svd$tetra_mean
+connect <- matrix(nrow = 4, ncol = 3, data = 0)
+connect[4,] <- meanPointAll
+connect[1,] <- connect[4,] + vCoord[,1]
+connect[2,] <- connect[4,] + vCoord[,2]
+connect[3,] <- connect[4,] + vCoord[,3]
+
+
+tetrahedron <-  matrix(data = c(1,1,1,1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,-1,1,-1,1,-1,-1,-1,-1,1), nrow = 8, ncol = 3, byrow = TRUE)
+tetrahedron <- as.data.frame(tetrahedron)
+
+plotTest <- plot_tetrahedron(AAbp_Matrix, color = T, size = 10)
+
+
+plotTest <- plotTest%>%
+  add_trace(tetrahedron, x = connect[c(1,4),1],
+            y=connect[c(1,4),2],z=connect[c(1,4),3],color = I('grey'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 0.5,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[1,1], y= connect[1,2], z= connect[1,3],
+    u= connect[1,1] - connect[4,1], v= connect[1,2] - connect[4,2], w= connect[1,3] - connect[4,3],
+    sizeref= 0.2,
+    colorscale = list(list(0, as.character('grey')),
+                      list(1, as.character('grey'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%
+  add_trace(tetrahedron, x = connect[c(2,4),1],
+            y=connect[c(2,4),2],z=connect[c(2,4),3],color = I('grey'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 0.5,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[2,1], y= connect[2,2], z= connect[2,3],
+    u= connect[2,1] - connect[4,1], v= connect[2,2] - connect[4,2], w= connect[2,3] - connect[4,3],
+    sizeref= 0.2,
+    colorscale = list(list(0, as.character('grey')),
+                      list(1, as.character('grey'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%
+  add_trace(tetrahedron, x = connect[c(3,4),1],
+            y=connect[c(3,4),2],z=connect[c(3,4),3],color = I('grey'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 0.5,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[3,1], y= connect[3,2], z= connect[3,3],
+    u= connect[3,1] - connect[4,1], v= connect[3,2] - connect[4,2], w= connect[3,3] - connect[4,3],
+    sizeref= 0.2,
+    colorscale = list(list(0, as.character('grey')),
+                      list(1, as.character('grey'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%
+  add_text(x = connect[c(1:3),1], y = connect[c(1:3),2], z = connect[c(1:3),3], text = c('PC1', 'PC2','PC3'),
+           showlegend = F)
+
+  axx <- list(
+    title = "",
+    zeroline = TRUE,
+    showline = TRUE,
+    showticklabels = TRUE,
+    showgrid = TRUE
+  )
+scene = list(camera = list(eye = list(x = 0, y = 0, z = -2)))
+
+plotTest%>%layout(scene=scene)
+```
+
+#Figure S3
+```{r 3D, S3B}
+#make predictions
+FCpredTrueList <- list()
+pos <- 'P-1'
+
+predTrue <- SVDregression.Iterative.CV(CV_motif,CV_alignment, pos = pos,Ftest_pVal = 0.001, useSimilarAA = T)
+#delete unsuccessful predictions
+predTrue <- predTrue[!is.na(predTrue$pred),]
+FCpredTrueList[[pos]] <- predTrue
+
+predTrue <- FCpredTrueList[[pos]]
+#delete unsuccessful predictions
+#predTrue <- predTrue[!is.na(predTrue$pred),]
+attr(predTrue, 'confidence') <- attr(predTrue, 'confidence')[attr(predTrue, 'confidence') <= 1]
+plotPredTrue(predTrue, main = paste0('FamilyCode at ',pos))
+
+```
+# Figure S4
+```{r S4A}
+#plot confidance
+plot(attr(predTrue, 'confidence'),groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F), ylab = 'Predict-True R^2', xlab = 'Confidence score', main = paste0('Confidence at ', pos))
+legend('bottomright', paste0('R^2 = ', round(groupedR2(groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F),
+                                                   attr(predTrue, 'confidence'), ),4)), bty = 'n')
+dt <- data.frame(conf = attr(predTrue, 'confidence'), R2 = groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F))
+lm <- lm(R2~conf, data= dt)
+abline(lm, col= 'red')
+#plot frequency
+
+```
+
+```{r S3A}
+pos <- 'P-1'
+
+BaseLines.ddG <- getBaseLineAccuracy(all_mono_motifs, pos = pos, randomSample = F)
+colnames(BaseLines.ddG) <- c('pred','true')
+BaseLines.PFM <- predTrue.ddG2frequency(BaseLines.ddG, PFM = T)
+plotPredTrue(BaseLines.ddG, xlab = 'Experiment 1 -ΔΔG/RT', ylab = 'Experiment 2 -ΔΔG/RT', main = paste0('Pair-wise experiment comparison at ',pos))
+
+```
+
+```{r S3C}
+pos <- 'P-1'
+
+predTrue <- closestSeqPred(CV_motif,CV_alignment, pos = pos)
+#delete unsuccessful predictions
+predTrue <- predTrue[!is.na(predTrue$pred),]
+plotPredTrue(predTrue, main = paste0('Closest-paralog prediction at ',pos))
+```
+
+```{r S3D}
+pos <- 'P-1'
+
+mod_alignment <- CV_alignment
+mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
+predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+
+
+plotPredTrue(predTrue, main = paste0('Similarity regression at ',pos))
+
+```
+
+#Figure 4
+```{r}
+groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
+SELEXFile_Template <- 'SELEXdata/$modelFile$/fit.models.consensus.json'
+SELEX_info <- data.frame(gene_symbol = groups, study = 'pb')
+SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'CANNTG', pos_index = c('P-3','P-2','P-1','P1','P2','P3'), checkSymmetry = T, withTable = F, useMode = c(1,2,1,1,1,1,1,1))
+```
+
+```{r 4B}
+result <- readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))
+mono <- JSON2Matrix(result, mode = 1)
+mononucleotide_logo(frequency2ddG(mono))
+result <- readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))
+mono <- JSON2Matrix(result, mode = 1)
+mononucleotide_logo(frequency2ddG(mono))
+```
+
+```{r 4C}
+result <- readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))
+mono <- JSON2Matrix(result, mode = 1)
+mononucleotide_logo(frequency2ddG(mono))
+result <- readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))
+mono <- JSON2Matrix(result, mode = 1)
+mononucleotide_logo(frequency2ddG(mono))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('HES2 replicate'))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('ASCL2 replicate'))
+```
+
+
+```{r 4E}
+library(readxl)
+library(ggplot2)
+library(ggsignif)
+bandIntensity <- read_excel("bandIntensity.xlsx")
+
+proportions <- bandIntensity$...6[c(1:6,13:18)]
+proportions <- c(proportions[1:3], exp(1.788), 8.09,
+                 proportions[4:6],exp(1.956), 28.41,
+                 proportions[7:9], exp(-3.948),0.023,
+                 proportions[10:12], exp(-2.15), 0.135)
+names <- c(rep('WT',5),rep('R5K',5),rep('V13R',5),rep('Double',5))
+names <- as.factor(names)
+cols <- c(rep('#6cab42',1),rep('#87eff2',1),rep('#f9d85b',1),rep('#c4560c',1))
+dt <- data.frame(name = names, prop = proportions)
+dt$prop <- log(dt$prop)
+dt$name <- factor(dt$name, levels = c('WT', 'R5K', 'V13R', 'Double'))
+
+
+p <- ggplot(dt, aes(x = name, y = prop, fill = name, color = name)) +
+  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 1) +
+  scale_fill_manual(values = cols, name = "Name") +
+  scale_color_manual(values = cols, name = "Name") +
+  labs(
+    x = "",
+    y = "-ΔΔG/RT (GC->CG)",
+    size =15
+  ) +
+  theme(legend.position = "none",
+    axis.text.x = element_text(face = 'bold',color=cols, size = 15),
+    panel.background = element_blank(),     # Remove panel background
+    panel.grid.major = element_blank(),     # Remove major gridlines
+    panel.grid.minor = element_blank(),     # Remove minor gridlines
+    plot.background = element_blank(),
+    panel.border = element_rect(colour = "black", fill=NA, size=0.5)# Remove plot background
+  ) +
+  geom_signif(comparisons = list(c("R5K", "WT"),
+                                 c("V13R", "Double"),
+                                 c("R5K", "V13R"),
+                                 c("WT", "V13R"),
+                                 c("WT", "Double"),
+                                 c("R5K", "Double")
+                                 ),
+              map_signif_level=TRUE, color = 'black',  step_increase = 0.1)
+plot(p)
+```
+
+
+```{r 4FG}
+svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
+svdModelpreTrain <- trainSVD.Iterative(svd, CV_alignment, Ftest_pVal = 0.001)
+keyPos <- svdModelpreTrain$keyPos
+keyPos <- lapply(keyPos, function(x) c(x,5))
+#svdModel <- trainSVD(svd, CV_alignment, no.keyPos = unlist(lapply(keyPos,length)), keyPos = keyPos)
+svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(2,1,1), keyPos = list(c(13,5), c(13), c(13)))
+#Predict binding motifs for test set
+test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c(
+                             'RKSLRPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLKPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             'RKSLRPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
+                             '--ARKNERERNRVKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARRNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ',
+                             '--ARKNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ')
+                             )
+test_motifs <- SELEX_motifs[-c(1,5)]
+pred_motifs <- predict(svdModel, test_alignment[], zero = 0.01, useSimilarAA = T)
+#Comparing between true and predicted testing set motifs 
+
+predT <- matrix2tetrahedron(pred_motifs)
+
+true <- lapply(test_motifs, function(x) x$matrix[,c('P-1','P-1')])
+trueT <- lapply(true, matrix2tetrahedron)
+trueT <- matrix(nrow = 6, ncol = 6, data = unlist(trueT), byrow = T)
+trueT <- trueT[,c(1,3,5)]
+wt <- lapply(SELEX_motifs[c(1,5)], function(x) x$matrix[,c('P-1','P-1')])
+wtT <- lapply(wt, matrix2tetrahedron)
+wtT <- matrix(nrow = 2, ncol = 6, data = unlist(wtT), byrow = T)
+wtT <- wtT[,c(1,3,5)]
+pred <- predT[1:6,] - wtT[c(1,1,1,2,2,2),]
+true <- trueT[1:6,] - wtT[c(1,1,1,2,2,2),]
+pred <- tetrahedron2matrix(pred)
+true <- tetrahedron2matrix(true)
+pred[pred < 0.01] <- 0.01
+true[true < 0.01] <- 0.01
+
+pred <- frequency2ddG(pred)
+true <- frequency2ddG(true)
+predTrueHes2 <- data.frame(pred = as.numeric(unlist(pred[,1:3])), true = as.numeric(unlist(true[,1:3])))
+plotPredTrue(predTrueHes2,  xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT', main = paste0('FamilyCode on HES2 mutants'))
+predTrueAscl2 <- data.frame(pred = as.numeric(unlist(pred[,4:6])), true = as.numeric(unlist(true[,4:6])))
+plotPredTrue(predTrueAscl2,  xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT', main = paste0('FamilyCode on ASCL2 mutants'))
+```
+
+#Figure S5
+```{r S5}
+library(plotly)
+AAbp_Matrix1 <- data.frame(Y = c(0.2,0.2,0.2,1))
+AAbp_Matrix2 <- data.frame(H = c(0.1,0.1,1,0.1))
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+
+#300/500
+rownames(AAbp_Matrix1) <- DNA()
+rownames(AAbp_Matrix2) <- DNA()
+mononucleotide_logo(frequency2ddG(AAbp_Matrix1))
+mononucleotide_logo(frequency2ddG(AAbp_Matrix2))
+
+mononucleotide_logo(get.dddG(AAbp_Matrix2, AAbp_Matrix1))
+
+Tetra1 <- matrix2tetrahedron(AAbp_Matrix1)
+Tetra2 <- matrix2tetrahedron(AAbp_Matrix2)
+connect <- t(rbind.data.frame(Tetra2,Tetra1))
+
+
+plotTest <- plot_tetrahedron(cbind(AAbp_Matrix1,AAbp_Matrix2), color = T, size = 20)
+plotTest%>%
+  add_trace(connect,x = as.numeric(connect[1,1:2]),
+            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[1,1], y= connect[2,1], z= connect[3,1],
+    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
+    sizeref= 0.1,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%layout(scene=scene)
+
+
+```
+
+# Load bHLH PBM data
+```{r}
+library(FamilyCode)
+library(R.utils)
+workDir <- 'PBM_bHLH/'
+#download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
+TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
+Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+#filter for PBM data with Z-scores
+TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
+rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
+#deal with duplicated experiment
+substr(rawPBM[duplicated(rawPBM)],11,11) <- '1'
+colnames(Zscores)[-1] <- rawPBM
+TFDirect.duplicated <- TFDirect
+substr(TFDirect.duplicated$Motif_ID,11,11) <- '1'
+TFDirect <- rbind.data.frame(TFDirect, TFDirect.duplicated)
+#get cisBP entries with PBM Z-scores
+TFDirect <- TFDirect[match(intersect(TFDirect$Motif_ID, rawPBM),TFDirect$Motif_ID),]
+
+
+#filter out demasi mutation sets
+TFdemasi <- TFDirect[TFDirect$MSource_Identifier == 'DeMasi2011',]
+```
+
+```{r}
+#uniprot can only handle certain number of searches at a time, so seperate all data into two parts
+gene_ids <- unique(TFDirect[,c('TF_Name', 'TF_Species')])
+searchUnitTemplate <- '(gene:"GENE" AND "SPECIES")'
+searchQ <- gsub('GENE', gene_ids$TF_Name[1], searchUnitTemplate)
+searchQ <- gsub('SPECIES', gene_ids$TF_Species[1], searchQ)
+for(i in 1:nrow(gene_ids)){#nrow(gene_ids)
+  addQ <- gsub('GENE', gene_ids$TF_Name[i], searchUnitTemplate)
+  addQ <- gsub('SPECIES', gene_ids$TF_Species[i], addQ)
+  searchQ <- paste0(searchQ, ' OR ', addQ)
+}
+```
+
+```{r}
+geneInfoUniprot <- read.delim(paste0(workDir,"geneInfoUniprot_all.tsv"))
+geneInfoUniprot$Gene.Names <- paste0(geneInfoUniprot$Gene.Names, ' ')
+```
+
+```{r}
+
+geneInfo <- data.frame()
+for(i in 1:nrow(gene_ids)){
+  add <- geneInfoUniprot[grep(paste0(gene_ids$TF_Name[i],' '), geneInfoUniprot$Gene.Names),]
+  if(nrow(add) != 0){
+    add <- add[nchar(add$Sequence) == max(nchar(add$Sequence)),][1,]
+    addSeq <- add$Sequence
+  }else{
+    addSeq <- NA 
+  }
+  Motif <- unique(TFDirect[TFDirect$TF_Name == gene_ids$TF_Name[i],]$Motif_ID)
+  addLine <- data.frame(name = gene_ids$TF_Name[i], seq = addSeq, motif = Motif)
+  geneInfo <- rbind.data.frame(geneInfo, addLine)
+}
+
+geneInfo <- geneInfo[!is.na(geneInfo$seq),]
+#write sequences as fasta to
+#writeFasta(geneInfo, paste0(workDir,'TF.fa'))
+```
+
+```{r}
+ali <- read.table(paste0(workDir,"TFhmm.sto"), quote="\"", fill = T)
+ali <- ali[-nrow(ali),]
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'\\|')[[1]][2])
+colnames(ali) <- c('name','alignment')
+keep <- which(substr(ali$alignment, 9,9) == 'E')
+cisBP_alignment <- ali[keep,]
+geneInfo <- geneInfo[keep,]
+#Check if cisBP_alignment and geneInfo matches
+sum(cisBP_alignment$name != geneInfo$name) == 0
+```
+
+```{r}
+geneInfo$name[match(TFdemasi$Motif_ID, geneInfo$motif)] <- paste0(TFdemasi$DBID.1, 'DeMasi')
+```
+
+```{r}
+cisBP_motifs <- list()
+options(warn=0)
+for(i in 1:nrow(geneInfo)){
+  motif <- geneInfo$motif[i]
+  motif <- suppressWarnings(read.table(paste0(workDir, 'pwms/', motif, '.txt'), header = F))
+  motif <- ddG2frequency(motif)
+  motif[motif < 0.001] <- 0.001#add regularization
+  rownames(motif) <- DNA()
+  add <- list()
+  add$gene_symbol <- geneInfo$name[i]
+  add$study <- i
+  add$mode <- 1
+  add$matrix <- as.matrix(motif)
+  cisBP_motifs[[length(cisBP_motifs)+1]] <- add
+  add <- list()
+  #add reverse compliment motif
+  add$gene_symbol <- geneInfo$name[i]
+  add$study <- i
+  add$mode <- -1
+  if(ncol(motif) == 0){
+    rev <- motif
+  }else{
+    rev <- as.matrix(motif)[nrow(motif):1, ncol(motif):1]
+  }
+  rownames(rev) <- DNA()
+  add$matrix <- rev
+  cisBP_motifs[[length(cisBP_motifs)+1]] <- add
+}
+#check if length of cisBP_motif is equal to 2 times geneInfo
+length(cisBP_motifs) == nrow(geneInfo)*2
+DeMasiID <- which(unlist(lapply(cisBP_motifs, function(x) length(grep('DeMasi', x$gene_symbol)) > 0)))
+DeMasi_motifs <- cisBP_motifs[DeMasiID]
+cisBP_motifs <- cisBP_motifs[-DeMasiID]
+
+```
+
+```{r}
+#align to CANNTG motif
+bHLHseed <- matrix(nrow = 4,ncol = 6,data = c(0,1,0,0,
+                                              1,0,0,0,
+                                              0,0,0,0,
+                                              0,0,0,0,
+                                              0,0,0,1,
+                                              0,0,1,0
+))
+rownames(bHLHseed) <- DNA()
+#Scoring would result in some motif shorter than the seed, those motifs will be discarded. 
+motifScores <- scoreMotifList(cisBP_motifs, bHLHseed, weight = c(1,1,0,0,1,1))
+```
+
+The motif (forward or reverse compliment) with the lowest motif matching score of each entry will be kept. For the same protein, entries are arranged from lower score to higher score
+```{r}
+idstds <- unique(motifScores[,1:2])
+all_motifs <- data.frame(NULL)
+for(i in 1:nrow(idstds)){
+  fDT <- motifScores[motifScores$gene_symbol == idstds[i,1],]
+  fDT <- fDT[fDT$study == idstds[i,2],]
+  all_motifs <- rbind.data.frame(all_motifs, fDT[which.min(fDT$score),])
+}
+motifs_arranged <- data.frame(NULL)
+motifScore <- c()
+for(i in 1:length(unique(all_motifs$gene_symbol))){
+  add <- all_motifs[all_motifs$gene_symbol == unique(all_motifs$gene_symbol)[i],]
+  add <- dplyr::arrange(add, score)
+  motifScore <- c(motifScore,add$score[1])
+  motifs_arranged <- rbind.data.frame(motifs_arranged, add)
+}
+#Plot distribution of lowest motif matching score
+#plot.ecdf(as.numeric(motifScore))
+```
+
+```{r}
+#Filter out motifs that do not match well with the seed
+motifTable_baseline <- motifs_arranged[motifs_arranged$score <= 1,]
+#Number of unique HD protiens kept:
+length(unique(motifTable_baseline$gene_symbol))
+```
+
+# Figure S6
+```{r S6A}
+motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
+cisBP_motifs_baseline <- filterMotifList(motifTable_baseline, cisBP_motifs, 6, motifPoses)
+cisBP_alignment <- cisBP_alignment[match(motifTable_baseline$gene_symbol, cisBP_alignment$name),]
+#check if motif List has same length as alignment
+length(cisBP_motifs_baseline) == nrow(cisBP_alignment)
+
+pos <- 'P-1'
+ScreenPoses <- c(pos,pos)
+BaseLines.ddG <- getBaseLineAccuracy(cisBP_motifs_baseline, pos = ScreenPoses, randomSample = F)
+colnames(BaseLines.ddG) <- c('pred','true')
+plotPredTrue(BaseLines.ddG, xlab = 'Experiment 1 -ΔΔG/RT', ylab = 'Experiment 2 -ΔΔG/RT', main = paste0('Pair-wise experiment comparison at ',pos))
+
+```
+
+# Figure S7
+```{r S7B}
+del <- which(duplicated(cisBP_alignment$alignment))
+CV_alignment <- cisBP_alignment[-del,]
+CV_motif <- cisBP_motifs_baseline[-del]
+#genreate p-val tablle
+pvalTable <- getPvalTable(CV_motif, Alignment = CV_alignment, pos_index = motifPoses)
+#apply -log(10)
+pvalTable <- -log(pvalTable,10)
+#set NAs to 0
+pvalTable[is.na(pvalTable)] <- 0
+#plot heatmap
+#pvalTable[pvalTable > -log(0.001/53/3,10)] <- 10
+gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
+                  Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+```
+
+```{r S6B}
+pos <- 'P-1'
+predTrue <- SVDregression.Iterative.CV(CV_motif,CV_alignment, pos = pos,Ftest_pVal = 0.001, useSimilarAA = T)
+predTrue <- predTrue[!is.na(predTrue$pred),]
+plotPredTrue(predTrue, main = paste0('FamilyCode at ', pos))
+```
+
+```{r S4B}
+plot(attr(predTrue, 'confidence'),groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F), ylab = 'Predict-True R^2', xlab = 'Confidence score', main = paste0('Confidence at ', pos))
+legend('bottomright', paste0('R^2 = ', round(groupedR2(groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F),
+                                                   attr(predTrue, 'confidence'), ),4)), bty = 'n')
+dt <- data.frame(conf = attr(predTrue, 'confidence'), R2 = groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F))
+lm <- lm(R2~conf, data= dt)
+abline(lm, col= 'red')
+```
+
+```{r S6C}
+predTrue <- closestSeqPred(CV_motif,CV_alignment, pos = pos)
+#delete unsuccessful predictions
+predTrue <- predTrue[!is.na(predTrue$pred),]
+
+plotPredTrue(predTrue, main = paste0('Closest-paralog prediction at ',pos))
+  
+```
+
+```{r S6D}
+
+mod_alignment <- CV_alignment
+mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
+predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+#delete unsuccessful predictions
+predTrue <- predTrue[!is.na(predTrue$pred),]
+
+
+plotPredTrue(predTrue, main = paste0('Similarity regression at ',pos))
+
+```
+
+# Figure S8
+```{r}
+DeMasiInfo <- data.frame(name = TFdemasi$DBID.1, seq = 'RRKAATMRERRRRRKVNEAFEVVKQRTC-PNPNQRLPKVEILRSAIDYINNLE', motif = TFdemasi$Motif_ID)
+substr(DeMasiInfo$seq,13,13) <- c('R','T','V','L')
+
+
+#Scoring would result in some motif shorter than the seed, those motifs will be discarded. 
+DeMasimotifScores <- scoreMotifList(DeMasi_motifs, bHLHseed, weight = c(1,1,0,0,1,1))
+
+idstds <- unique(DeMasimotifScores[,1:2])
+Demasi_motifsDT <- data.frame(NULL)
+for(i in 1:nrow(idstds)){
+  fDT <- DeMasimotifScores[DeMasimotifScores$gene_symbol == idstds[i,1],]
+  fDT <- fDT[fDT$study == idstds[i,2],]
+  Demasi_motifsDT <- rbind.data.frame(Demasi_motifsDT, fDT[which.min(fDT$score),])
+}
+
+DeMasi_motifs <- filterMotifList(Demasi_motifsDT, DeMasi_motifs, 6, motifPoses)
+```
+
+```{r S8B}
+for(i in 1:4){
+  plot <- mononucleotide_logo(frequency2ddG(DeMasi_motifs[[i]]$matrix))
+  plot <- plot + ggplot2::ggtitle(paste0(DeMasiInfo$name[i],'_true'))
+  plot(plot)
+}
+```
+
+create FamilyCode model
+```{r}
+demasi_alignment <- rbind.data.frame(CV_alignment, as.character(DeMasiInfo[4,c(1:2)]))
+demasi_motif <- CV_motif
+demasi_motif[[84]] <- DeMasi_motifs[[4]]
+svdModeldemasi <- makeSVDModel(CV_motif, CV_alignment, Positions = c('P-3','P-2','P-1','P1','P2','P3'))
+
+```
+
+predict ΔΔΔG using tetrahedron distance
+
+```{r S8C}
+svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
+#svdModel <- trainSVD(svd, CV_alignment, no.keyPos = unlist(lapply(keyPos,length)), keyPos = keyPos)
+svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(1,1,1), keyPos = list(c(13), c(13), c(13)))
+#Predict binding motifs for test set
+test_alignment <- data.frame(name = DeMasiInfo$name, alignment = DeMasiInfo$seq)
+pred_motifs <- predict(svdModel, test_alignment[], zero = 0.001, useSimilarAA = T)
+#Comparing between true and predicted testing set motifs 
+
+predT <- matrix2tetrahedron(pred_motifs)
+
+true <- lapply(DeMasi_motifs, function(x) x$matrix[,c('P-1','P-1')])
+trueT <- lapply(true, matrix2tetrahedron)
+trueT <- matrix(nrow = 8, ncol = 6, data = unlist(trueT), byrow = T)
+trueT <- trueT[,c(1,3,5)]
+pred <- predT[1:4,] - trueT[c(4,4,4,4),]
+true <- trueT[1:4,] - trueT[c(4,4,4,4),]
+pred <- tetrahedron2matrix(pred)
+true <- tetrahedron2matrix(true)
+pred[pred < 0.01] <- 0.01#min(pred[pred > 0])
+true[true < 0.01] <- 0.01#min(true[true > 0])
+
+pred <- frequency2ddG(pred)
+true <- frequency2ddG(true)
+predTrue <- data.frame(pred = as.numeric(unlist(pred[,1:3])), true = as.numeric(unlist(true[,1:3])))
+plotPredTrue(predTrue, main = 'FamilyCode prediction for HLH-1 mutants', xlab = 'DeMasi et. al., -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+
+```
+```{r S8D}
+HLH1WT <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1WT.tsv", header=FALSE)
+HLH1L13V <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1L13V.tsv", header=FALSE)
+HLH1L13R <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1L13R.tsv", header=FALSE)
+HLH1L13T <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1L13T.tsv", header=FALSE)
+
+PBSmodels <- list(HLH1L13R, HLH1L13T, HLH1L13V, HLH1WT, HLH1L13R, HLH1L13T, HLH1L13V, HLH1WT)
+pred_motifs <- data.frame(NULL)
+for(i in 1:length(PBSmodels)){
+  PBSmotif <- t(PBSmodels[[i]])
+  rownames(PBSmotif) <- DNA()
+  PBSmotif <- apply(PBSmotif, 2, function(x) x/max(x))
+  pred_motifs <- rbind.data.frame(pred_motifs, PBSmotif[,15])
+}
+
+pred_motifs <- t(pred_motifs)
+rownames(pred_motifs) <- DNA()
+#Comparing between true and predicted testing set motifs 
+
+predT <- matrix2tetrahedron(pred_motifs)
+
+true <- lapply(DeMasi_motifs, function(x) x$matrix[,c('P-1','P-1')])
+trueT <- lapply(true, matrix2tetrahedron)
+trueT <- matrix(nrow = 8, ncol = 6, data = unlist(trueT), byrow = T)
+trueT <- trueT[,c(1,3,5)]
+pred <- predT[1:4,] - trueT[c(4,4,4,4),]
+true <- trueT[1:4,] - trueT[c(4,4,4,4),]
+pred <- tetrahedron2matrix(pred)
+true <- tetrahedron2matrix(true)
+pred[pred < 0.01] <- 0.01#min(pred[pred > 0])
+true[true < 0.01] <- 0.01#min(true[true > 0])
+
+pred <- frequency2ddG(pred)
+true <- frequency2ddG(true)
+predTrue <- data.frame(pred = as.numeric(unlist(pred[,1:3])), true = as.numeric(unlist(true[,1:3])))
+plotPredTrue(predTrue, main = 'DeepPBS prediction for HLH-1 mutants', xlab = 'DeMasi et. al., -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+
+```
+
+# Load HD SELEX data
+```{r}
+library(FamilyCode)
+workDir <- 'SELEX_HD/'
+motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
+#loadMotifs
+proBound_DIR <- paste0(workDir, 'consensus_fits/')
+template <- paste0(workDir, 'consensus_fits/$modelFile$.consensus.json')
+gene_symbol_factor_ids <- read.csv(paste0(workDir, 'gene_symbol_factor_ids.csv'), row.names=1)
+files <- list.files(proBound_DIR, pattern = 'consensus')
+files <- unlist(lapply(strsplit(files, '\\.'), function(x) x[[1]][1]))
+gene_symbol <- unlist(lapply(strsplit(files, '_'), function(x) x[[1]][1]))
+study <- unlist(lapply(strsplit(files, '_'), function(x) x[[2]][1]))
+info <- data.frame(gene_symbol, study)
+info <- info[as.numeric(info$gene_symbol) < 10000,]
+
+HD_all_motifs <- loadFromIndex(info, template)
+motifPositions <- motifPoses
+HDseed <- matrix(nrow = 4,ncol = 8,data = c(0,0,0,0,
+                                            0,0,0,0,
+                                            0,0,0,1,
+                                            1,0,1,1,
+                                            1,0,0,0,
+                                            0,1,0,1,
+                                            0,0,0,0,
+                                            0,0,0,0))
+rownames(HDseed) <- DNA()
+
+HD_motifScores <- scoreMotifList(HD_all_motifs, HDseed, weight = c(0,0,1,1,1,1,0,0))
+
+HDids<- unique(HD_motifScores$gene_symbol)
+HDfiltered_table <- data.frame(NULL)
+for(i in 1:length(HDids)){
+  fDT <- HD_motifScores[HD_motifScores$gene_symbol == HDids[i],]
+  HDfiltered_table <- rbind.data.frame(HDfiltered_table, fDT[which.min(fDT$score),])
+}
+plot.ecdf(as.numeric(HDfiltered_table$score))
+HDfiltered_table <- HDfiltered_table[HDfiltered_table$score < 1,]
+
+#prepare alignment
+HD_ali <- read.table(paste0(workDir,"HD_hmm.sto"), quote="\"", fill = T)
+HD_ali$V1 <- apply(HD_ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
+colnames(HD_ali) <- c('name','alignment')
+
+#change names
+geneName <- apply(HDfiltered_table, 1, function(x) gene_symbol_factor_ids$gene_symbol[gene_symbol_factor_ids$factor_ids == x[1]])
+HDfiltered_table$gene_symbol <- geneName
+HD_motifs <- filterMotifList(HDfiltered_table, HD_all_motifs, 8,motifPositions)
+
+
+#quality filter
+HD_alignment <- matchAliMotif(HD_motifs, HD_ali)
+del <- which(substr(HD_alignment$alignment, 50,50) != 'N')
+HD_alignment <- HD_alignment[-del,]
+HD_motifs <- HD_motifs[-del]
+
+
+del <- which(duplicated(HD_alignment$name))
+HD_alignment_SELEX <- HD_alignment[-del,]
+HD_motif_SELEX <- HD_motifs[-del]
+```
+
+```{r}
+#get base line data set
+HDidstds <- unique(HD_motifScores[,1:2])
+HDfiltered_table_baseline <- data.frame(NULL)
+for(i in 1:nrow(HDidstds)){
+  fDT <- HD_motifScores[HD_motifScores$gene_symbol == HDidstds[i,1],]
+  fDT <- fDT[fDT$study == HDidstds[i,2],]
+  HDfiltered_table_baseline <- rbind.data.frame(HDfiltered_table_baseline, fDT[which.min(fDT$score),])
+}
+plot.ecdf(as.numeric(HDfiltered_table_baseline$score))
+
+HDfiltered_table_baseline <- HDfiltered_table_baseline[HDfiltered_table_baseline$score < 1,]
+HD_motifs_baseline <- filterMotifList(HDfiltered_table_baseline, HD_all_motifs, 8, motifPositions)
+
+```
+
+```{r S4C}
+#genreate p-val tablle
+pvalTable <- getPvalTable(HD_motif_SELEX, Alignment = HD_alignment_SELEX, pos_index = motifPositions)
+#apply -log(10)
+pvalTable <- -log(pvalTable,10)
+#set NAs to 0
+pvalTable[is.na(pvalTable)] <- 0
+#plot heatmap
+gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
+                  Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+
+```
+
+# Load HD PBM data
+```{r}
+library(FamilyCode)
+library(R.utils)
+workDir <- 'PBM_HD/'
+#download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
+TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
+Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+#filter for PBM data with Z-scores
+TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
+rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
+#deal with duplicated experiment
+substr(rawPBM[duplicated(rawPBM)],11,11) <- '1'
+colnames(Zscores)[-1] <- rawPBM
+TFDirect.duplicated <- TFDirect
+substr(TFDirect.duplicated$Motif_ID,11,11) <- '1'
+TFDirect <- rbind.data.frame(TFDirect, TFDirect.duplicated)
+#get cisBP entries with PBM Z-scores
+TFDirect <- TFDirect[match(intersect(TFDirect$Motif_ID, rawPBM),TFDirect$Motif_ID),]
+
+geneInfoUniprot <- read.delim(paste0(workDir,"geneInfoUniprot_all.tsv"))
+geneInfoUniprot$Gene.Names <- paste0(geneInfoUniprot$Gene.Names, ' ')
+
+gene_ids <- unique(TFDirect[,c('TF_Name', 'TF_Species')])
+geneInfo <- data.frame()
+for(i in 1:nrow(gene_ids)){
+  add <- geneInfoUniprot[grep(paste0(gene_ids$TF_Name[i],' '), geneInfoUniprot$Gene.Names),]
+  if(nrow(add) != 0){
+    add <- add[nchar(add$Sequence) == max(nchar(add$Sequence)),][1,]
+    addSeq <- add$Sequence
+  }else{
+    addSeq <- NA 
+  }
+  Motif <- unique(TFDirect[TFDirect$TF_Name == gene_ids$TF_Name[i],]$Motif_ID)
+  addLine <- data.frame(name = gene_ids$TF_Name[i], seq = addSeq, motif = Motif)
+  geneInfo <- rbind.data.frame(geneInfo, addLine)
+}
+
+geneInfo <- geneInfo[!is.na(geneInfo$seq),]
+
+
+ali <- read.table(paste0(workDir,"TFhmm.sto"), quote="\"", fill = T)
+ali <- ali[-nrow(ali),]
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'\\|')[[1]][2])
+colnames(ali) <- c('name','alignment')
+keep <- which(substr(ali$alignment, 50,50) == 'N')
+cisBP_alignment <- ali[keep,]
+geneInfo <- geneInfo[keep,]
+#Check if cisBP_alignment and geneInfo matches
+sum(cisBP_alignment$name != geneInfo$name) == 0
+```
+```{r}
+cisBP_motifs <- list()
+options(warn=0)
+for(i in 1:nrow(geneInfo)){
+  motif <- geneInfo$motif[i]
+  motif <- suppressWarnings(read.table(paste0(workDir, 'pwms/', motif, '.txt'), header = F))
+  motif <- ddG2frequency(motif)
+  motif[motif < 0.001] <- 0.001#add psuedo count
+  rownames(motif) <- DNA()
+  add <- list()
+  add$gene_symbol <- geneInfo$name[i]
+  add$study <- i
+  add$mode <- 1
+  add$matrix <- as.matrix(motif)
+  cisBP_motifs[[length(cisBP_motifs)+1]] <- add
+  add <- list()
+  #add reverse compliment motif
+  add$gene_symbol <- geneInfo$name[i]
+  add$study <- i
+  add$mode <- -1
+  if(ncol(motif) == 0){
+    rev <- motif
+  }else{
+    rev <- as.matrix(motif)[nrow(motif):1, ncol(motif):1]
+  }
+  rownames(rev) <- DNA()
+  add$matrix <- rev
+  cisBP_motifs[[length(cisBP_motifs)+1]] <- add
+}
+#check if length of cisBP_motif is equal to 2 times geneInfo
+length(cisBP_motifs) == nrow(geneInfo)*2
+
+#align to NNTDAYNN motif
+HDseed <- matrix(nrow = 4,ncol = 8,data = c(0,0,0,0,
+                                            0,0,0,0,
+                                            0,0,0,1,
+                                            1,0,1,1,
+                                            1,0,0,0,
+                                            0,1,0,1,
+                                            0,0,0,0,
+                                            0,0,0,0))
+rownames(HDseed) <- DNA()
+
+motifScores <- scoreMotifList(cisBP_motifs, HDseed, weight = c(0,0,1,1,1,1,0,0))
+
+idstds <- unique(motifScores[,1:2])
+all_motifs <- data.frame(NULL)
+for(i in 1:nrow(idstds)){
+  fDT <- motifScores[motifScores$gene_symbol == idstds[i,1],]
+  fDT <- fDT[fDT$study == idstds[i,2],]
+  all_motifs <- rbind.data.frame(all_motifs, fDT[which.min(fDT$score),])
+}
+motifs_arranged <- data.frame(NULL)
+motifScore <- c()
+for(i in 1:length(unique(all_motifs$gene_symbol))){
+  add <- all_motifs[all_motifs$gene_symbol == unique(all_motifs$gene_symbol)[i],]
+  add <- dplyr::arrange(add, score)
+  motifScore <- c(motifScore,add$score[1])
+  motifs_arranged <- rbind.data.frame(motifs_arranged, add)
+}
+#Plot distribution of lowest motif matching score
+#plot.ecdf(as.numeric(motifScore))
+
+#Filter out motifs that do not match well with the seed
+motifTable_baseline <- motifs_arranged[motifs_arranged$score < 1,]
+#Number of unique HD protiens kept:
+length(unique(motifTable_baseline$gene_symbol))
+
+motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
+cisBP_motifs_baseline <- filterMotifList(motifTable_baseline, cisBP_motifs, 8, motifPoses)
+cisBP_alignment <- cisBP_alignment[match(motifTable_baseline$gene_symbol, cisBP_alignment$name),]
+#check if motif List has same length as alignment
+length(cisBP_motifs_baseline) == nrow(cisBP_alignment)
+
+del <- which(duplicated(cisBP_alignment$alignment))
+HD_alignment_PBM <- cisBP_alignment[-del,]
+HD_motif_PBM <- cisBP_motifs_baseline[-del]
+```
+
+```{r S4D}
+#genreate p-val tablle
+pvalTable <- getPvalTable(HD_motif_PBM, Alignment = HD_alignment_PBM, pos_index = motifPositions)
+#apply -log(10)
+pvalTable <- -log(pvalTable,10)
+#set NAs to 0
+pvalTable[is.na(pvalTable)] <- 0
+#plot heatmap
+gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
+                  Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+
+```
+
+
+# Concatnate SELEX and PBM
+```{r}
+intersect <- intersect(HD_alignment_PBM$alignment, HD_alignment_SELEX$alignment)
+PBM_int <- match(intersect, HD_alignment_PBM$alignment)
+SELEX_int <- match(intersect, HD_alignment_SELEX$alignment)
+all_motif <- c(HD_motif_SELEX, HD_motif_PBM)
+CV_alignment <- rbind.data.frame(HD_alignment_SELEX, HD_alignment_PBM[-PBM_int,])
+CV_motif <- c(HD_motif_SELEX, HD_motif_PBM[-PBM_int])
+nrow(CV_alignment) == length(CV_motif)
+saveRDS(CV_alignment, file = 'HD_SELEX_PBM_CV_alignment.rsd')
+saveRDS(CV_motif, file = 'HD_SELEX_PBM_CV_motif.rsd')
+CV_alignment <- readRDS('HD_SELEX_PBM_CV_alignment.rsd')
+CV_motif <- readRDS('HD_SELEX_PBM_CV_motif.rsd')
+```
+
+# Figure 5
+```{r 5A}
+#genreate p-val tablle
+pvalTable <- getPvalTable(CV_motif, Alignment = CV_alignment, pos_index = motifPoses)
+#apply -log(10)
+pvalTable <- -log(pvalTable,10)
+#set NAs to 0
+pvalTable[is.na(pvalTable)] <- 0
+#plot heatmap
+gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
+                  Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+```
+
+```{r 5B}
+
+AAPosition <- 5
+motifPosition <- 'D4'
+AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
+plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+```
+
+
+# Figure S9
+```{r S9}
+library(R.utils)
+mkdirs('HDlogos')
+for(i in 1:length(CV_motif)){
+  mono <- CV_motif[[i]]$matrix
+  plot <- mononucleotide_logo(frequency2ddG(mono), axes = F, labels = F)
+  png(paste0('HDlogos/',CV_alignment$name[i],'_',substr(CV_alignment$alignment[i], 5,15), '-',substr(CV_alignment$alignment[i], 44,54),'.png'),
+       width = 600, height = 200,)
+  plot(plot)
+  dev.off()
+}
+```
+
+# Load Kock et al. data
+```{r}
+suppressMessages(library(readxl))
+suppressMessages(library(FamilyCode))
+suppressMessages(library(dplyr))
+options(warn = -1)
+workDir <- 'KockHDPBM/'
+KockMatrix <- readRDS(paste0(workDir,'IntensityMatrix.rds'))
+col <- gsub('NKX2-','NKX2.',colnames(KockMatrix[,3:ncol(KockMatrix)]))
+col <- gsub('NKX3-','NKX3.',col)
+CV_alignment <- readRDS('HD_SELEX_PBM_CV_alignment.rsd')
+CV_motif <- readRDS('HD_SELEX_PBM_CV_motif.rsd')
+motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
+
+options(warn = -1)
+ali <- read.table(paste0(workDir,"add_hmm.sto"), quote="\"", fill = T)
+ali <- ali[-nrow(ali),]
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
+ali$V1 <- apply(ali, 1, function(x) strsplit(x[1],'\\|')[[1]][2])
+colnames(ali) <- c('name','alignment')
+ali$name <- c('HOXB6', 'NKX2-6', 'NKX2-4')
+CV_alignment <- rbind.data.frame(CV_alignment, ali)
+
+CV_motif[[415]] <- list(name = 'HOXB6', matrix = CV_motif[[414]]$matrix)
+CV_motif[[416]] <- list(name = 'NKX2-6', matrix = CV_motif[[414]]$matrix)
+CV_motif[[417]] <- list(name = 'NKX2-4', matrix = CV_motif[[414]]$matrix)
+
+SampleInfo <- read_excel("KockHDPBM/41467_2024_47396_MOESM5_ESM.xls")
+ExpIDs <- unique(unlist(lapply(strsplit(col,'_'), function(x) x[1])))
+mutationInfo <- data.frame(NULL)
+for(i in 1:length(ExpIDs)){
+  id <- ExpIDs[i]
+  info <- strsplit(id,'-')[[1]]
+  if(info[2] == 'REF'){
+    addLine <- data.frame(TF = info[1], mutation = 'WT', position = NA, mutateFrom = 'WT')
+  }else{
+    id <- gsub('\\.','-',id)
+    pos <- SampleInfo[SampleInfo$allele == id,]$canonical
+    addLine <- data.frame(TF = info[1], mutation = substr(info[2],nchar(info[2]),nchar(info[2])), position = pos, mutateFrom = substr(info[2],1,1))
+  }
+  mutationInfo <- rbind.data.frame(mutationInfo, addLine)
+}
+
+#validate with CV_Alignment
+valid <- c()
+mutationInfo$TF <- gsub('\\.','-',mutationInfo$TF)
+for(i in 1:nrow(mutationInfo)){
+  seq <- CV_alignment[CV_alignment$name == mutationInfo$TF[i],]$alignment
+  if(mutationInfo$mutation[i] == 'WT' ){
+    valid <- c(valid, 'WT')
+  }else if(length(seq) == 0){
+    valid <- c(valid, 'notInAlignment')
+  }else{
+    match <- substr(seq[1], mutationInfo$position[i]-1,mutationInfo$position[i]-1) == mutationInfo$mutateFrom[i]
+    valid <- c(valid, match)
+  }
+}
+mutationInfo$valid <- valid
+
+alignment <- c()
+for(i in 1:nrow(mutationInfo)){
+  seq <- CV_alignment[CV_alignment$name == mutationInfo$TF[i],]$alignment
+  if(length(seq) == 0){
+    alignment <- c(alignment, NA)
+  }else if(mutationInfo$mutation[i] == 'WT' ){
+    alignment <- c(alignment, seq[1])
+  }else{
+    #match <- substr(seq[1], mutationInfo$position[i]-1,mutationInfo$position[i]-1) == mutationInfo$mutateFrom[i]
+    #if(match){
+    substr(seq[1], mutationInfo$position[i]-1,  mutationInfo$position[i]-1) <-  mutationInfo$mutation[i]
+    alignment <- c(alignment, seq[1])
+    #}else{
+    #  alignment <- c(alignment, NA)
+    #}
+  }
+}
+mutationInfo$alignment <- alignment
+mutationInfo$name <- gsub('\\.','-',ExpIDs)
+
+PWMsID <- colnames(KockMatrix)[3:ncol(KockMatrix)]
+Kock_motifs <- list()
+options(warn=-1)
+for(i in 1:length(PWMsID)){
+  motif <- PWMsID[i]
+  motif <- suppressWarnings(read.table(paste0(workDir, 'pwmsI/', motif, '.txt'), header = F))
+  motif <- ddG2frequency(motif)
+  motif[motif < 0.01] <- 0.01#add psuedo count
+  rownames(motif) <- DNA()
+  add <- list()
+  add$gene_symbol <- PWMsID[i]
+  add$study <- i
+  add$mode <- 1
+  add$matrix <- as.matrix(motif)
+  colnames(add$matrix) <- motifPoses
+  Kock_motifs[[length(Kock_motifs)+1]] <- add
+}
+
+
+psamI_pcc <- read.table(paste0(workDir,'psamI_pcc.txt'), quote="\"", comment.char="")
+colnames(psamI_pcc) <- c('sample','R2')
+
+key <- match(PWMsID,psamI_pcc$sample)
+psamI_pcc <- psamI_pcc[key,]
+sum(psamI_pcc$sample == PWMsID)
+
+R2order <- order(-psamI_pcc$R2)
+
+psamI_pcc$name = unlist(lapply(psamI_pcc$sample, function(x) strsplit(x,'_')[[1]][1]))
+psamI_pcc <- psamI_pcc[R2order,]
+Kock_motifs <- Kock_motifs[R2order]
+
+bestMatch <- which(!duplicated(psamI_pcc$name))
+Kock_motifs_bestRep <- Kock_motifs[bestMatch]
+psamI_pcc_bestRep <- psamI_pcc[bestMatch,]
+psamI_pcc_2 <- psamI_pcc[-bestMatch,]
+Kock_motifs_2 <- Kock_motifs[-bestMatch]
+bestMatch2 <- which(!duplicated(psamI_pcc_2$name))
+Kock_motifs_2bestRep <- Kock_motifs_2[bestMatch2]
+psamI_pcc_2bestRep <- psamI_pcc_2[bestMatch2,]
+
+
+#Construct motif list and alignment table for Base Line (Motif similarity between the two best PBM experiments)
+
+Kock_alignment <- data.frame(name = mutationInfo$name, alignment = mutationInfo$alignment)
+
+Kock_motifs_set <- list()
+Exp2TrueMotifs <- list()
+for(i in 1:nrow(Kock_alignment)){
+  bestID <- which(psamI_pcc_bestRep$name == Kock_alignment$name[i])
+  add <- list(name = Kock_alignment$name[i], probeR2 = psamI_pcc_bestRep$R2[bestID], matrix = Kock_motifs_bestRep[[bestID]]$matrix)
+  Kock_motifs_set[[length(Kock_motifs_set)+1]] <- add
+  bestID <- which(psamI_pcc_2bestRep$name == Kock_alignment$name[i])
+  if(length(bestID) ==0){
+    Exp2TrueMotifs[[length(Exp2TrueMotifs)+1]] <- list(name = Kock_alignment$name[i], probeR2 = NULL, matrix = NULL)
+    next
+  }
+  add <- list(name = Kock_alignment$name[i], probeR2 = psamI_pcc_2bestRep$R2[bestID], matrix = Kock_motifs_2bestRep[[bestID]]$matrix)
+  Exp2TrueMotifs[[length(Exp2TrueMotifs)+1]] <- add
+}
+
+#check if motif List has same length as alignment
+length(Kock_motifs_set) == nrow(Kock_alignment)
+sum(unlist(lapply(Kock_motifs_set, function(x) x$name)) == Kock_alignment$name)
+
+sum(mutationInfo$name == Kock_alignment$name)
+
+CV_alignment_Kock <- CV_alignment[1:414,]
+CV_motif_Kock <- CV_motif[1:414]
+
+#Prepare true motifs
+mutantID <- which(mutationInfo$mutate != 'WT')
+WTID <- which(mutationInfo$mutate == 'WT')
+trueMotifs <- Kock_motifs_set[mutantID]
+trueStandard <- list()
+for(i in mutantID){
+  setA <- which(mutationInfo$TF == mutationInfo$TF[i])
+  setB <- which(mutationInfo$mutation == 'WT')
+  WTid <- intersect(setA, setB)
+  add <- Kock_motifs_set[[WTid[1]]]
+  trueStandard[[length(trueStandard)+1]] <- add
+}
+```
+
+#Figure 6
+```{r baseLine}
+dddGTrue <- list()
+dddGpred <- list()
+R2ListbaseLine <- c()
+for(i in 1:length(trueMotifs)){
+  mutid <- mutantID[i]
+  if(is.null(Exp2TrueMotifs[[mutid]]$matrix)){
+    R2ListbaseLine <- c(R2ListbaseLine, 0)
+    dddGTrue[[length(dddGTrue) + 1]] <- NULL
+    dddGpred[[length(dddGpred) + 1]] <- NULL
+    next
+  }
+  predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  #predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
+  if(sum(predDiffTetra) == 0){
+    R2ListbaseLine <- c(R2ListbaseLine, 0)
+    dddGTrue[[length(dddGTrue) + 1]] <- NULL
+    dddGpred[[length(dddGpred) + 1]] <- NULL
+    next
+  }
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  #trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
+  dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
+  R2ListbaseLine <- c(R2ListbaseLine, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+}
+```
+
+```{r FamilyCode}
+mutantID <- which(mutationInfo$mutate != 'WT')
+WTID <- which(mutationInfo$mutate == 'WT')
+
+standard_Alignment <- list()
+for(i in 1:nrow(Kock_alignment)){
+  WTid <- which(CV_alignment$name == mutationInfo$TF[i])
+  add <- CV_alignment[WTid[1],]
+  standard_Alignment <- rbind.data.frame(standard_Alignment, add)
+}
+
+#WTmodel <- makeSVDModel(CV_motif_Kock, CV_alignment_Kock, Positions = motifPoses, Ftest_pVal = 0.01)
+
+mutationPredList <- list()
+mutationPredConfidence <- c()
+inTraining <- c()
+for(i in mutantID){
+  mutpos <- as.numeric(mutationInfo$position[i])-1
+  svdModel <- makeSVDModel.singleMutation(CV_motif_Kock, CV_alignment_Kock, Positions = motifPoses, mutation = mutpos)
+  inTraining <- c(sum(substr(Kock_alignment$alignment[i],mutpos,mutpos) == substr(CV_alignment_Kock$alignment,mutpos,mutpos)), inTraining)
+  #predict mutant
+  predPSAM <- data.frame(pred = c(0,0,0,0))
+  rownames(predPSAM) <- DNA()
+  for(pos in motifPoses){
+    predColumn <- predict(svdModel[[pos]], Kock_alignment[i,], useSimilarAA = T)
+    predPSAM <- cbind.data.frame(predPSAM, predColumn)
+    predConfidence <- attr(predColumn, 'confidence')
+  }
+  predPSAM <- predPSAM[,-1]
+  colnames(predPSAM) <- motifPoses
+  #predict standard
+  
+  mutationPredList[[length(mutationPredList)+1]] <- list(name = Kock_alignment$name[i], matrix = predPSAM)
+  mutationPredConfidence <- c(mutationPredConfidence, predConfidence)
+}
+
+
+predMotifs <- mutationPredList
+sum(unlist(lapply(predMotifs, function(x) x$name)) == unlist(lapply(trueMotifs, function(x) x$name)))
+
+dddGTrue <- list()
+dddGpred <- list()
+R2List <- c()
+for(i in 1:length(trueMotifs)){
+  predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  if(sum(predDiffTetra) == 0){
+    predDiffTetra[1] <- 0.01
+    mod <- TRUE
+  }else{
+    mod <- FALSE
+  }
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  if(mod){
+    predDiffMatrix[1,] <- 1
+  }
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
+  dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
+  #plotPredTrue(predTrue, main = paste0('FamilyCode rediction for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+  R2List <- c(R2List, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+}
+trueMagnitudeAll <- c()
+predMagnitudeAll <- c()
+for(pos in motifPoses){
+  pred <- unlist(lapply(dddGpred, function(x) frequency2ddG(x)[,pos]))
+  true <- unlist(lapply(dddGTrue, function(x) frequency2ddG(x)[,pos]))
+  predTrue <- data.frame(true = true, pred = pred)
+  predTrue <- predTrue[!is.na(predTrue$pred),]
+  trueMatrix <- matrix(nrow = 4, ncol = nrow(predTrue)/4, byrow = F, data = predTrue$true)
+  trueMagnitude <- c()
+  predMatrix <- matrix(nrow = 4, ncol = nrow(predTrue)/4, byrow = F, data = predTrue$pred)
+  predMagnitude <- c()
+  for(set in 1:ncol(trueMatrix)){
+    trueMagnitude <- c(trueMagnitude, max(trueMatrix[,set]) - min(trueMatrix[,set]))
+    predMagnitude <- c(predMagnitude, max(predMatrix[,set]) - min(predMatrix[,set]))
+  }
+  trueMagnitudeAll <- c(trueMagnitudeAll, trueMagnitude)
+  predMagnitudeAll <- c(predMagnitudeAll, predMagnitude)
+}
+  
+groupedpredMagnitudeAll <- matrix(nrow = 8, ncol = 92, data = predMagnitudeAll, byrow = T)
+dddGRangePred <- apply(groupedpredMagnitudeAll, 2, function(x) max(x))
+groupedtrueMagnitudeAll <- matrix(nrow = 8, ncol = 92, data = trueMagnitudeAll, byrow = T)
+dddGRangeTrue <- apply(groupedtrueMagnitudeAll, 2, function(x) max(x))
+match <- match(mutationInfo$name[mutantID], SampleInfo$allele)
+SampleInfo$allele[match] == mutationInfo$name[mutantID]
+matchSampleInfo <- SampleInfo[match,]
+```
+
+```{r 6A, S10C}
+# Create a data frame for plotting
+data <- data.frame(
+  position = mutationInfo$position[mutantID]-1,
+  R2List = R2List,
+  trueMagnitude = dddGRangeTrue
+)
+
+# Define the color categories
+data$color_category <- ifelse(
+  ((matchSampleInfo$affinity_change == 'no change') + (matchSampleInfo$specificity_change == 'no')) == 2, "Mutation has no effect", "Specificity or affinity change")
+
+# Define color mapping
+color_mapping <- c("Specificity or affinity change" = "red",  "Mutation has no effect" = "cyan")
+
+# First Lollipop Plot: R2List
+ggplot(data, aes(x = factor(position), y = R2List, color = color_category)) +
+  geom_segment(aes(xend = factor(position), y = 0, yend = R2List), 
+               color = "gray", linetype = "dotted", size = 0.5) +  # Gray, dotted, thin sticks
+  geom_point(size = 3) +
+  scale_color_manual(values = color_mapping) +
+  labs(title = "",
+       x = "Position of mutation of HD alignment",
+       y = "",
+       color = "Annotation according to Kock et al.") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),  # Remove background grid
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+
+```
+
+```{r 6BC}
+i = which(mutationInfo[mutantID,]$position == 29)
+i = i[which.max(dddGRangeTrue[i])]
+
+predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+if(sum(predDiffTetra) == 0){
+  predDiffTetra[1] <- 0.01
+  mod <- TRUE
+}else{
+  mod <- FALSE
+}
+trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+rownames(trueDiffMatrix) <- DNA()
+rownames(predDiffMatrix) <- DNA()
+if(mod){
+  predDiffMatrix[1,] <- 1
+}
+pred <- as.numeric(frequency2ddG(predDiffMatrix))
+true <- as.numeric(frequency2ddG(trueDiffMatrix))
+predTrue <- data.frame(true = true, pred = pred)
+plotPredTrue(predTrue, main = paste0('FamilyCode prediction for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Replicate1 -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+mononucleotide_logo(frequency2ddG(predDiffMatrix), label = F)
+mononucleotide_logo(frequency2ddG(trueDiffMatrix), label = F)
+#mononucleotide_logo(frequency2ddG(Kock_motifs_set[[mut]]$matrix))
+#mononucleotide_logo(frequency2ddG(Kock_motifs_set[[max(WTID[WTID < mut])]]$matrix))
+
+mutid <- mutantID[i]
+predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+#predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
+trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+#trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
+predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+rownames(trueDiffMatrix) <- DNA()
+rownames(predDiffMatrix) <- DNA()
+pred <- as.numeric(frequency2ddG(predDiffMatrix))
+true <- as.numeric(frequency2ddG(trueDiffMatrix))
+predTrue <- data.frame(true = true, pred = pred)
+plotPredTrue(predTrue, main = paste0('Base Line for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Replicate1 -ΔΔΔG/RT', ylab = 'Replicate2 -ΔΔΔG/RT')
+mononucleotide_logo(frequency2ddG(predDiffMatrix), label = F)
+mononucleotide_logo(frequency2ddG(trueDiffMatrix), label = F)
+```
+
+```{r rCLAMPS}
+rCLAMPS_predicted_pwms <- read.delim("E:/Desktop/FamilyCode/KockHDPBM/rCLAMPS_predicted_pwms.txt")
+motifPoses <- c('T3','D4','A5','Y6','N7','N8')
+rCLAMPSTFs <- mutationInfo$name[mutationInfo$mutation != 'WT']
+predMotifs <- list()
+for(i in 1:length(rCLAMPSTFs)){
+  motifInfo <- rCLAMPS_predicted_pwms[rCLAMPS_predicted_pwms$prot == rCLAMPSTFs[i],]
+  matrix <- matrix(ncol = 6, nrow = 4, data = motifInfo$prob, byrow = F)
+  rownames(matrix) <- DNA()
+  colnames(matrix) <- motifPoses
+  predMotifs[[length(predMotifs)+1]] <- list(name = motifInfo$prot[1], matrix = matrix)
+}
+
+
+
+sum(unlist(lapply(predMotifs, function(x) x$name)) == unlist(lapply(trueMotifs, function(x) x$name)))
+
+
+
+dddGTrue <- list()
+dddGpred <- list()
+R2List_rCLAMPS <- c()
+for(i in 1:length(trueMotifs)){
+  predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix[,motifPoses])
+  if(sum(predDiffTetra) == 0){
+    next
+  }
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix[,motifPoses]) - matrix2tetrahedron(trueStandard[[i]]$matrix[,motifPoses])
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
+  dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
+  R2List_rCLAMPS <- c(R2List_rCLAMPS, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+}
+```
+
+```{r deepPBS}
+motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
+
+deepPBSdir <- 'deepPBS/HDKock/results/'
+deepPBSmotifFiles <- list.files(deepPBSdir, pattern = '.tsv')
+
+deepPBSTFs <- gsub('.tsv','',deepPBSmotifFiles)
+deepPBSTFs <- gsub('_','-',deepPBSTFs)
+deepPBSdMotifs <- list()
+for(i in 1:length(deepPBSmotifFiles)){
+  PBSmodels <- read.delim(paste0(deepPBSdir, deepPBSmotifFiles[i]), header=FALSE)
+  PBSmotif <- t(PBSmodels)
+  motif <- apply(PBSmotif, 2, function(x) x/max(x))
+  rownames(motif) <- DNA()
+  add <- list()
+  add$gene_symbol <- deepPBSTFs[i]
+  add$study <- i
+  add$mode <- 1
+  add$matrix <- as.matrix(motif)
+  deepPBSdMotifs[[length(deepPBSdMotifs)+1]] <- add
+  add <- list()
+  #add reverse compliment motif
+  add$gene_symbol <- deepPBSTFs[i]
+  add$study <- i
+  add$mode <- -1
+  if(ncol(motif) == 0){
+    rev <- motif
+  }else{
+    rev <- as.matrix(motif)[nrow(motif):1, ncol(motif):1]
+  }
+  rownames(rev) <- DNA()
+  add$matrix <- rev
+  deepPBSdMotifs[[length(deepPBSdMotifs)+1]] <- add
+}
+
+HDseed <- matrix(nrow = 4,ncol = 8,data = c(0,0,0,0,
+                                            0,0,0,0,
+                                            0,0,0,1,
+                                            1,0,1,1,
+                                            1,0,0,0,
+                                            0,1,0,1,
+                                            0,0,0,0,
+                                            0,0,0,0))
+rownames(HDseed) <- DNA()
+
+motifScores <- scoreMotifList(deepPBSdMotifs, HDseed, weight = c(0,0,1,1,1,1,0,0))
+idstds <- unique(motifScores[,1:2])
+all_motifs <- data.frame(NULL)
+for(i in 1:nrow(idstds)){
+  fDT <- motifScores[motifScores$gene_symbol == idstds[i,1],]
+  fDT <- fDT[fDT$study == idstds[i,2],]
+  all_motifs <- rbind.data.frame(all_motifs, fDT[which.min(fDT$score),])
+}
+
+all_motifs$study <- unlist(lapply(strsplit(all_motifs$gene_symbol,'_'), function(x) x[2]))
+all_motifs$gene_symbol <- unlist(lapply(strsplit(all_motifs$gene_symbol,'_'), function(x) x[1]))
+motifs_arranged <- data.frame(NULL)
+motifScore <- c()
+for(i in 1:length(unique(all_motifs$gene_symbol))){
+  add <- all_motifs[all_motifs$gene_symbol == unique(all_motifs$gene_symbol)[i],]
+  add <- dplyr::arrange(add, score)
+  motifScore <- c(motifScore,add$score[1])
+  motifs_arranged <- rbind.data.frame(motifs_arranged, add)
+}
+#Plot distribution of lowest motif matching score
+plot.ecdf(as.numeric(motifScore))
+
+deepPBS_motifs_set <- filterMotifList(motifs_arranged, deepPBSdMotifs, 8, motifPoses)
+predMotifs <- deepPBS_motifs_set
+
+key <- match(tolower(unlist(lapply(trueMotifs, function(x) x$name))),unlist(lapply(predMotifs, function(x) x$name)))
+predMotifs <- predMotifs[key]
+sum(unlist(lapply(predMotifs, function(x) x$name)) == tolower(unlist(lapply(trueMotifs, function(x) x$name))))
+
+#dddG prediction
+dddGTrue <- list()
+dddGpred <- list()
+R2List_deepPBS <- c()
+for(i in 1:length(trueMotifs)){
+  predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  if(sum(predDiffTetra) == 0){
+    next
+  }
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
+  dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
+  R2List_deepPBS <- c(R2List_deepPBS, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+}
+```
+
+```{r 6D}
+library(ggplot2)
+library(ggpubr)
+
+rCmutpos <- 1:92
+data <- data.frame(
+  R2 = c(R2ListbaseLine[rCmutpos], R2List[rCmutpos], R2List_rCLAMPS[rCmutpos], R2List_deepPBS[rCmutpos]),
+  Group = factor(c(rep("Base Line", length(rCmutpos)), 
+                   rep("Family Code", length(rCmutpos)), 
+                   rep("rCLAMPS", length(rCmutpos)), 
+                   rep("deepPBS", length(rCmutpos))))
+)
+
+data$Group <- factor(data$Group, levels = c('Base Line', 'Family Code', 'rCLAMPS', 'deepPBS'))
+
+# Custom colors for the groups
+custom_colors <- c('Base Line' = '#1f77b4', 
+                   'Family Code' = '#ff7f0e', 
+                   'rCLAMPS' = '#2ca02c', 
+                   'deepPBS' = '#d61828')
+
+# Create violin plot with jittered points colored by group
+p <- ggplot(data, aes(x = Group, y = R2, fill = Group)) +
+  geom_violin(trim = FALSE, alpha = 0.6) +  # Violin plot
+  geom_jitter(aes(color = Group), shape = 16, size = 1.5, position = position_jitter(width = 0.02, height = 0), alpha = 1) + # Jitter points with matching colors
+  labs(title = "ΔΔΔG/RT Prediction R^2 Comparison", y = "R^2s", x = "") +
+  scale_fill_manual(values = custom_colors) +  # Apply custom fill colors
+  scale_color_manual(values = custom_colors) + # Apply matching colors to jitter points
+  theme_minimal() +
+  ylim(-0.5, 1.7) +
+  theme(
+    legend.position = "bottom",        # Place legend at the bottom
+    legend.title = element_blank(),    # Remove legend title
+    panel.grid.major = element_blank(),# Remove major grid lines
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),    # Remove minor grid lines
+    panel.background = element_rect(fill = "white"), # White panel background
+    plot.background = element_rect(color = "white"),
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
+
+# Add significance bars with fixed vertical lines
+p <- p + stat_compare_means(comparisons = list(
+                                               c("Family Code", "rCLAMPS"),
+                                               c("Family Code", "deepPBS"),
+                                               c('Base Line', "Family Code")),
+                            label = "p.signif",
+                            method = "wilcox",
+                            paired = TRUE,
+                            tip.length = 0.08, # Shorter vertical lines
+                            bracket.size = 0.7,
+                            label.y= c(1.3,1.45,1.6)) +  # Thicker brackets for clarity
+  theme(legend.position = "none")
+
+# Print the plot
+plot(p)
+```
+
+# Figure S10
+```{r S10A}
+# Create a data frame for plotting
+data <- data.frame(
+  position = mutationInfo$position[mutantID]-1,
+  R2List = R2ListbaseLine,
+  trueMagnitude = dddGRangeTrue
+)
+
+# Define the color categories
+# Define the color categories
+data$color_category <- ifelse(
+  ((matchSampleInfo$affinity_change == 'no change') + (matchSampleInfo$specificity_change == 'no')) == 2, "Mutation has no effect", "Specificity or affinity change")
+
+# Define color mapping
+color_mapping <- c("Specificity or affinity change" = "red",  "Mutation has no effect" = "cyan")
+# Second Lollipop Plot: trueMagnitude
+ggplot(data, aes(x = factor(position), y = trueMagnitude, color = color_category)) +
+  geom_segment(aes(xend = factor(position), y = 0, yend = trueMagnitude), 
+               color = "gray", linetype = "dotted", size = 0.5) +  # Gray, dotted, thin sticks
+  geom_point(size = 3, alpha = 1) +
+  #geom_hline(yintercept = 1, linetype = "dashed", color = "gray", size = 0.7) +  # Add horizontal dashed line at y = 1
+  scale_color_manual(values = color_mapping) +
+  labs(title = "",
+       x = "Position of mutation of HD alignment",
+       y = "",
+       color = "Annotation according to Kock et al.") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),  # Remove background grid
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+
+wilcox.test(data$trueMagnitude[data$color_category != "Mutation has no effect"], data$trueMagnitude[data$color_category == "Mutation has no effect"])
+```
+
+```{r S10B}
+# Create a data frame for plotting
+data <- data.frame(
+  position = mutationInfo$position[mutantID]-1,
+  R2List = R2ListbaseLine,
+  trueMagnitude = dddGRangeTrue
+)
+
+# Define the color categories
+data$color_category <- ifelse(
+  ((matchSampleInfo$affinity_change == 'no change') + (matchSampleInfo$specificity_change == 'no')) == 2, "Mutation has no effect", "Specificity or affinity change")
+
+# Define color mapping
+color_mapping <- c("Specificity or affinity change" = "red",  "Mutation has no effect" = "cyan")
+
+# First Lollipop Plot: R2List
+ggplot(data, aes(x = factor(position), y = R2List, color = color_category)) +
+  geom_segment(aes(xend = factor(position), y = 0, yend = R2List), 
+               color = "gray", linetype = "dotted", size = 0.5) +  # Gray, dotted, thin sticks
+  geom_point(size = 3, alpha = 1) +  
+  scale_color_manual(values = color_mapping) +
+  labs(title = "",
+       x = "Position of mutation of HD alignment",
+       y = "",
+       color = "Annotation according to Kock et al.") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),  # Remove background grid
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
+# Figure S11
+```{r S11A-L}
+mutantID <- which(mutationInfo$mutate != 'WT')
+WTID <- which(mutationInfo$mutate == 'WT')
+
+standard_Alignment <- list()
+for(i in 1:nrow(Kock_alignment)){
+  WTid <- which(CV_alignment$name == mutationInfo$TF[i])
+  add <- CV_alignment[WTid[1],]
+  standard_Alignment <- rbind.data.frame(standard_Alignment, add)
+}
+
+#WTmodel <- makeSVDModel(CV_motif_Kock, CV_alignment_Kock, Positions = motifPoses, Ftest_pVal = 0.01)
+
+mutationPredList <- list()
+mutationPredConfidence <- c()
+inTraining <- c()
+for(i in mutantID){
+  mutpos <- as.numeric(mutationInfo$position[i])-1
+  svdModel <- makeSVDModel.singleMutation(CV_motif_Kock, CV_alignment_Kock, Positions = motifPoses, mutation = mutpos)
+  inTraining <- c(sum(substr(Kock_alignment$alignment[i],mutpos,mutpos) == substr(CV_alignment_Kock$alignment,mutpos,mutpos)), inTraining)
+  #predict mutant
+  predPSAM <- data.frame(pred = c(0,0,0,0))
+  rownames(predPSAM) <- DNA()
+  for(pos in motifPoses){
+    predColumn <- predict(svdModel[[pos]], Kock_alignment[i,], useSimilarAA = T)
+    predPSAM <- cbind.data.frame(predPSAM, predColumn)
+    predConfidence <- attr(predColumn, 'confidence')
+  }
+  predPSAM <- predPSAM[,-1]
+  colnames(predPSAM) <- motifPoses
+  #predict standard
+  
+  mutationPredList[[length(mutationPredList)+1]] <- list(name = Kock_alignment$name[i], matrix = predPSAM)
+  mutationPredConfidence <- c(mutationPredConfidence, predConfidence)
+}
+
+
+predMotifs <- mutationPredList
+sum(unlist(lapply(predMotifs, function(x) x$name)) == unlist(lapply(trueMotifs, function(x) x$name)))
+
+dddGTrue <- list()
+dddGpred <- list()
+R2List <- c()
+for(i in 1:length(trueMotifs)){
+  predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  if(sum(predDiffTetra) == 0){
+    predDiffTetra[1] <- 0.01
+    mod <- TRUE
+  }else{
+    mod <- FALSE
+  }
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  if(mod){
+    predDiffMatrix[1,] <- 1
+  }
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
+  dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
+  #plotPredTrue(predTrue, main = paste0('FamilyCode rediction for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+  R2List <- c(R2List, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+}
+
+ids <- c(49,58,50,52)
+for(i in ids){
+  predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  if(sum(predDiffTetra) == 0){
+    predDiffTetra[1] <- 0.01
+    mod <- TRUE
+  }else{
+    mod <- FALSE
+  }
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  if(mod){
+    predDiffMatrix[1,] <- 1
+  }
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  plotPredTrue(predTrue, main = paste0('FamilyCode prediction for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Replicate1 -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+  plot(mononucleotide_logo(frequency2ddG(predDiffMatrix), label = F))
+  plot(mononucleotide_logo(frequency2ddG(trueDiffMatrix), label = F))
+  #mononucleotide_logo(frequency2ddG(Kock_motifs_set[[mut]]$matrix))
+  #mononucleotide_logo(frequency2ddG(Kock_motifs_set[[max(WTID[WTID < mut])]]$matrix))
+  
+  mutid <- mutantID[i]
+  predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  #predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
+  trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
+  #trueDiffTetra <- matrix2tetrahedron(trueMotifs[[i]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
+  predDiffMatrix <- tetrahedron2matrix(predDiffTetra)
+  trueDiffMatrix <- tetrahedron2matrix(trueDiffTetra)
+  predDiffMatrix[predDiffMatrix < 0.01] <- 0.01
+  trueDiffMatrix[trueDiffMatrix < 0.01] <- 0.01
+  rownames(trueDiffMatrix) <- DNA()
+  rownames(predDiffMatrix) <- DNA()
+  pred <- as.numeric(frequency2ddG(predDiffMatrix))
+  true <- as.numeric(frequency2ddG(trueDiffMatrix))
+  predTrue <- data.frame(true = true, pred = pred)
+  plotPredTrue(predTrue, main = paste0('Base Line for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Replicate1 -ΔΔΔG/RT', ylab = 'Replicate2 -ΔΔΔG/RT')
+  plot(mononucleotide_logo(frequency2ddG(predDiffMatrix), label = F))
+}
+
+
+
+```
+
