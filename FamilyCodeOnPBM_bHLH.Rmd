@@ -8,10 +8,11 @@ output: html_notebook
 ```{r}
 library(FamilyCode)
 library(R.utils)
-workDir <- 'PBM_bHLH/'
+workDir <- 'intermediateData/bHLH/PBM_bHLH/'
+rawData <- 'rawData/bHLH/'
 #download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
-TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
-Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+TF_Information <- read.delim(paste0(rawData, "TF_Information.txt"))
+Zscores <- read.delim(paste0(rawData,"Zscores.txt"))
 #filter for PBM data with Z-scores
 TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
 rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
@@ -74,9 +75,9 @@ writeFasta(geneInfo, paste0(workDir,'TF.fa'))
 
 ### Use hmmalign to align the output sequences with the Homeo Domain HMM model from pfam entry PF00010
 ```{}
-hmmalign -o cisBP_TF.sto bHLH.hmm TF.fa
+hmmalign -o TF.sto bHLH.hmm TF.fa
 ```
-
+select only the columns aligned with the hmm file and save as TFhmm.sto
 ### Use Jalview to hide non-hmm columns and output filtered residues, saved as TFhmm.sto
 ### Screen and Trim unusable alignment entries
 ```{r}
@@ -216,15 +217,15 @@ for(pos in motifPoses){
         main = paste0(pos,' Mean R^2 = ', round(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, 
                                                           member = length(ScreenPoses)*4, mean= T),4)))
   plotPredTrue(BaseLines.PFM, xlab = 'Experiment 1', ylab = 'Experiment 2', main = paste0('Base Line PFM at ',pos))
-  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
-  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = length(ScreenPoses)*4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
+  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = length(ScreenPoses)*4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, ' Mean PCC = ', round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, 
-                                                     member = length(ScreenPoses)*4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = length(ScreenPoses)*4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(BaseLines.ddG$pred, 
         BaseLines.ddG$true, nrow(BaseLines.ddG), throughZero = T), 
         4), round(RMSD(BaseLines.ddG$pred, BaseLines.ddG$true), 
         4), round(groupedR2(BaseLines.PFM$pred, 
-        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = T), 
+        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = F), 
         4)^(1/2), round(hit,4))
 }
 evaMatrix_BL <- evaMatrix
@@ -249,11 +250,10 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
 ```
 
 ### Test on FamilyCode prediction with leave-one-out CV
-## Panel 4D
 Compare with paper: Wetzel, J. L., Zhang, K., & Singh, M. (2022). Learning probabilistic protein–DNA recognition codes from DNA-binding specificities using structural mappings. Genome Research, 32(9), 1776-1786.
 Accuracy measurement in Figure 2
 "PWM F, where entry fbj is the frequency with which nucleotide b is observed in column j in a set of aligned binding sites of that TF. "
-```{r 4D}
+```{r}
 FCpredTrueList <- list()
 for(pos in motifPoses){
   predTrue <- SVDregression.Iterative.CV(CV_motif,CV_alignment, pos = pos,Ftest_pVal = 0.001, useSimilarAA = T)
@@ -285,20 +285,20 @@ for(pos in motifPoses){
   abline(lm, col= 'red')
   
   plotPredTrue(predTrue.PFM, main = paste0('FamilyCode prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
         predTrue$true, nrow(predTrue), throughZero = T), 
         4), round(RMSD(predTrue$pred, predTrue$true), 
         4), round(groupedR2(predTrue.PFM$pred, 
-        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
         4)^(1/2), round(hit,4))
 }
 evaMatrix_FC <- evaMatrix
 ```
-### Comparing prediction result with Closest sequence
+### Comparing prediction result with Closest paralog
 from paper:
 Weirauch, M. T., Yang, A., Albu, M., Cote, A. G., Montenegro-Montero, A., Drewe, P., ... & Hughes, T. R. (2014). Determination and inference of eukaryotic transcription factor sequence specificity. Cell, 158(6), 1431-1443.
 Figure S6/S7
@@ -317,16 +317,16 @@ for(pos in motifPoses){
                                                           member = 4, mean= T),4)))
   
   plotPredTrue(predTrue.PFM, main = paste0('Closest sequence prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
       predTrue$true, nrow(predTrue), throughZero = T), 
       4), round(RMSD(predTrue$pred, predTrue$true), 
       4), round(groupedR2(predTrue.PFM$pred, 
-      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
       4)^(1/2), round(hit,4))
 }
 evaMatrix_CS <- evaMatrix
@@ -343,7 +343,7 @@ colnames(evaMatrix) <- motifPoses
 for(pos in motifPoses){
   mod_alignment <- CV_alignment
   mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
-  predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+  predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile =paste0(rawData,'SimilarityRegression/F082_1.97d.json'))
   #delete unsuccessful predictions
   predTrue <- predTrue[!is.na(predTrue$pred),]
   predTrue.PFM <- predTrue.ddG2frequency(predTrue, PFM = T)
@@ -354,15 +354,15 @@ for(pos in motifPoses){
                                                           member = 4, mean= T),4)))
   
   plotPredTrue(predTrue.PFM, main = paste0('Similarity regression prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
     predTrue$true, nrow(predTrue), throughZero = T), 
     4), round(RMSD(predTrue$pred, predTrue$true), 
     4), round(groupedR2(predTrue.PFM$pred, 
-    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
     4)^(1/2), round(hit,4))
 }
 evaMatrix_SR <- evaMatrix
@@ -371,7 +371,7 @@ evaMatrix_SR <- evaMatrix
 ```{r}
 evaMatrix <- rbind.data.frame(evaMatrix_BL, evaMatrix_FC,  evaMatrix_SR, evaMatrix_CS)
 evaMatrix <- evaMatrix[c((1:4)*4-3, (1:4)*4-2, (1:4)*4-1,(1:4)*4), ]
-write.csv(evaMatrix, 'evaMatrix_bHLH_PBM.csv')
+write.csv(evaMatrix, paste0(workDir,'evaMatrix_bHLH_PBM.csv'))
 ```
 
 ### Load De Masi motifs
@@ -394,8 +394,7 @@ for(i in 1:nrow(idstds)){
 DeMasi_motifs <- filterMotifList(Demasi_motifsDT, DeMasi_motifs, 6, motifPoses)
 ```
 
-## Panel 5I
-```{r 5I}
+```{r}
 for(i in 1:4){
   plot <- mononucleotide_logo(frequency2ddG(DeMasi_motifs[[i]]$matrix))
   plot <- plot + ggplot2::ggtitle(paste0(DeMasiInfo$name[i],'_true'))
@@ -424,19 +423,18 @@ create FamilyCode model
 demasi_alignment <- rbind.data.frame(CV_alignment, as.character(DeMasiInfo[4,c(1:2)]))
 demasi_motif <- CV_motif
 demasi_motif[[84]] <- DeMasi_motifs[[4]]
-svdModeldemasi <- makeSVDModel(demasi_motif, demasi_alignment, Positions = c('P-3','P-2','P-1','P1','P2','P3'))
+svdModeldemasi <- makeSVDModel(CV_motif, CV_alignment, Positions = c('P-3','P-2','P-1','P1','P2','P3'))
 
 ```
 
 predict ΔΔΔG using tetrahedron distance
-## Panel 5J
 ```{r 5J}
-svd <- matrixSVD(gene2pos(demasi_motif, pos = 'P-1'))
+svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
 #svdModel <- trainSVD(svd, CV_alignment, no.keyPos = unlist(lapply(keyPos,length)), keyPos = keyPos)
-svdModel <- trainSVD(svd, demasi_alignment, no.keyPos = c(1,1,1), keyPos = list(c(13), c(13), c(13)))
+svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(1,1,1), keyPos = list(c(13), c(13), c(13)))
 #Predict binding motifs for test set
 test_alignment <- data.frame(name = DeMasiInfo$name, alignment = DeMasiInfo$seq)
-pred_motifs <- predict(svdModel, test_alignment[], zero = 0.001, useSimilarAA = T)
+pred_motifs <- predict(svdModel, test_alignment[], zero = 0.01, useSimilarAA = T)
 #Comparing between true and predicted testing set motifs 
 
 predT <- matrix2tetrahedron(pred_motifs)
@@ -449,13 +447,54 @@ pred <- predT[1:4,] - trueT[c(4,4,4,4),]
 true <- trueT[1:4,] - trueT[c(4,4,4,4),]
 pred <- tetrahedron2matrix(pred)
 true <- tetrahedron2matrix(true)
-pred[pred < 0] <- 0.001#min(pred[pred > 0])
-true[true < 0] <- 0.001#min(true[true > 0])
+pred[pred < 0.01] <- 0.01#min(pred[pred > 0])
+true[true < 0.01] <- 0.01#min(true[true > 0])
 
 pred <- frequency2ddG(pred)
 true <- frequency2ddG(true)
 predTrue <- data.frame(pred = as.numeric(unlist(pred[,1:3])), true = as.numeric(unlist(true[,1:3])))
 plotPredTrue(predTrue, main = 'FamilyCode prediction for HLH-1 mutants', xlab = 'DeMasi et. al., -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
+
+```
+
+### test with deepPSB
+
+```{r}
+HLH1WT <- read.delim("rawData/deepPBS/HLH1/HLH1WT.tsv", header=FALSE)
+HLH1L13V <- read.delim("rawData/deepPBS/HLH1/HLH1L13V.tsv", header=FALSE)
+HLH1L13R <- read.delim("rawData/deepPBS/HLH1/HLH1L13R.tsv", header=FALSE)
+HLH1L13T <- read.delim("rawData/deepPBS/HLH1/HLH1L13T.tsv", header=FALSE)
+
+PBSmodels <- list(HLH1L13R, HLH1L13T, HLH1L13V, HLH1WT, HLH1L13R, HLH1L13T, HLH1L13V, HLH1WT)
+pred_motifs <- data.frame(NULL)
+for(i in 1:length(PBSmodels)){
+  PBSmotif <- t(PBSmodels[[i]])
+  rownames(PBSmotif) <- DNA()
+  PBSmotif <- apply(PBSmotif, 2, function(x) x/max(x))
+  pred_motifs <- rbind.data.frame(pred_motifs, PBSmotif[,15])
+}
+
+pred_motifs <- t(pred_motifs)
+rownames(pred_motifs) <- DNA()
+#Comparing between true and predicted testing set motifs 
+
+predT <- matrix2tetrahedron(pred_motifs)
+
+true <- lapply(DeMasi_motifs, function(x) x$matrix[,c('P-1','P-1')])
+trueT <- lapply(true, matrix2tetrahedron)
+trueT <- matrix(nrow = 8, ncol = 6, data = unlist(trueT), byrow = T)
+trueT <- trueT[,c(1,3,5)]
+pred <- predT[1:4,] - trueT[c(4,4,4,4),]
+true <- trueT[1:4,] - trueT[c(4,4,4,4),]
+pred <- tetrahedron2matrix(pred)
+true <- tetrahedron2matrix(true)
+pred[pred < 0.01] <- 0.01#min(pred[pred > 0])
+true[true < 0.01] <- 0.01#min(true[true > 0])
+
+pred <- frequency2ddG(pred)
+true <- frequency2ddG(true)
+predTrue <- data.frame(pred = as.numeric(unlist(pred[,1:3])), true = as.numeric(unlist(true[,1:3])))
+plotPredTrue(predTrue, main = 'DeepPBS prediction for HLH-1 mutants', xlab = 'DeMasi et. al., -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
 
 ```
 

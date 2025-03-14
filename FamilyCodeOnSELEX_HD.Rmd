@@ -5,12 +5,12 @@ output: html_notebook
 ### Load motifs
 ```{r}
 library(FamilyCode)
-workDir <- 'SELEX_HD/'
+rawData <- 'rawData/HD/'
 motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
 #loadMotifs
-proBound_DIR <- paste0(workDir, 'consensus_fits/')
-template <- paste0(workDir, 'consensus_fits/$modelFile$.consensus.json')
-gene_symbol_factor_ids <- read.csv(paste0(workDir, 'gene_symbol_factor_ids.csv'), row.names=1)
+proBound_DIR <- paste0(rawData, 'consensus_fits/')
+template <- paste0(rawData, 'consensus_fits/$modelFile$.consensus.json')
+gene_symbol_factor_ids <- read.csv(paste0(rawData, 'gene_symbol_factor_ids.csv'), row.names=1)
 files <- list.files(proBound_DIR, pattern = 'consensus')
 files <- unlist(lapply(strsplit(files, '\\.'), function(x) x[[1]][1]))
 gene_symbol <- unlist(lapply(strsplit(files, '_'), function(x) x[[1]][1]))
@@ -45,7 +45,7 @@ HDfiltered_table <- HDfiltered_table[HDfiltered_table$score < 1,]
 ### Load Alignment
 ```{r}
 #prepare alignment
-HD_ali <- read.table(paste0(workDir,"HD_hmm.sto"), quote="\"", fill = T)
+HD_ali <- read.table(paste0(rawData,"HD_hmm.sto"), quote="\"", fill = T)
 HD_ali$V1 <- apply(HD_ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
 colnames(HD_ali) <- c('name','alignment')
 
@@ -86,6 +86,24 @@ AAbp_Matrix <- AAbpCombination(HD_motifs, HD_alignment, AAPosition, motifPositio
 plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
 ```
 
+```{r}
+colorCode <- pvalTable$`D4`
+colorCode[is.na(colorCode)] <- median(colorCode[!is.na(colorCode)])
+max <- max(colorCode)
+colorList <- colorCode/max*255
+
+complexSample <- 'intermediateData/HD/HD_processed.pse'
+addColorTemplate <- 'color 0x$colorCode$, polymer.protein and resi $resiNum$'
+script <- paste('load ', complexSample, sep = '')
+for(i in 1:length(colorList)){
+  colorCode <- rgb(colorList[i], 0, (255-colorList[i]), maxColorValue = 255)
+  colorCode <- gsub('#','',colorCode)
+  addScript <- gsub('\\$colorCode\\$',colorCode,addColorTemplate)
+  addScript <- gsub('\\$resiNum\\$', i, addScript)
+  script <- c(script, addScript)
+}
+#run.pymol(pymol.dir = 'pymol_app/PyMOLWin.exe',script = script)
+```
 ### Prepare Base line
 ```{r}
 #get base line data set
@@ -122,16 +140,16 @@ for(pos in motifPoses){
         main = paste0(pos,' Mean R^2 = ', round(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, 
                                                           member = length(ScreenPoses)*4, mean= T),4)))
   plotPredTrue(BaseLines.PFM, xlab = 'Experiment 1', ylab = 'Experiment 2', main = paste0('Base Line PFM at ',pos))
-  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
-  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = length(ScreenPoses)*4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
+  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = length(ScreenPoses)*4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, 
-                                                     member = length(ScreenPoses)*4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = length(ScreenPoses)*4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   
   evaMatrix[,pos] <- c(round(groupedR2(BaseLines.ddG$pred, 
         BaseLines.ddG$true, nrow(BaseLines.ddG), throughZero = T), 
         4), round(RMSD(BaseLines.ddG$pred, BaseLines.ddG$true), 
         4), round(groupedR2(BaseLines.PFM$pred, 
-        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = T), 
+        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = F), 
         4)^(1/2), round(hit,4))
 }
 evaMatrix_BL <- evaMatrix
@@ -176,13 +194,13 @@ for(pos in motifPoses){
   #plot frequency
 
   plotPredTrue(predTrue.PFM, main = paste0('FamilyCode prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
         predTrue$true, nrow(predTrue), throughZero = T), 
         4), round(RMSD(predTrue$pred, predTrue$true), 
         4), round(groupedR2(predTrue.PFM$pred, 
-        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
         4)^(1/2), round(hit,4))
 }
 evaMatrix_FC <- evaMatrix
@@ -211,15 +229,15 @@ for(pos in motifPoses){
                                                           member = 4, mean= T),4)))
   
   plotPredTrue(predTrue.PFM, main = paste0('Closest sequence prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
       predTrue$true, nrow(predTrue), throughZero = T), 
       4), round(RMSD(predTrue$pred, predTrue$true), 
       4), round(groupedR2(predTrue.PFM$pred, 
-      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
       4)^(1/2), round(hit,4))
 }
 evaMatrix_CS <- evaMatrix
@@ -235,7 +253,7 @@ Figure S6/S7
 options(warn=0)
 SRpredTrueList <- list()
 for(pos in motifPoses){
-  predTrue <- SRpred(CV_motif,CV_alignment, pos = pos, weightfile = 'cisBP_HD/F223_1.97d.json')
+  predTrue <- SRpred(CV_motif,CV_alignment, pos = pos, weightfile = paste0(rawData,'SimilarityRegression/F223_1.97d.json'))
   #delete unsuccessful predictions
   predTrue <- predTrue[!is.na(predTrue$pred),]
   SRpredTrueList[[pos]] <- predTrue
@@ -254,15 +272,15 @@ for(pos in motifPoses){
                                                           member = 4, mean= T),4)))
   
   plotPredTrue(predTrue.PFM, main = paste0('Similarity regression prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
     predTrue$true, nrow(predTrue), throughZero = T), 
     4), round(RMSD(predTrue$pred, predTrue$true), 
     4), round(groupedR2(predTrue.PFM$pred, 
-    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
     4)^(1/2), round(hit,4))
 }
 evaMatrix_SR <- evaMatrix
@@ -271,7 +289,6 @@ evaMatrix_SR <- evaMatrix
 ```{r}
 evaMatrix <- rbind.data.frame(evaMatrix_BL, evaMatrix_FC,  evaMatrix_SR, evaMatrix_CS)
 evaMatrix <- evaMatrix[c((1:4)*4-3, (1:4)*4-2, (1:4)*4-1,(1:4)*4), ]
-write.csv(evaMatrix, 'evaMatrix_HD_SELEX.csv')
 ```
 ### systemetic test of prediction methods with subsampling
 ```{r}
@@ -352,35 +369,3 @@ matplot(1-1/2:10, cbind(FCrmsd, CSrmsd, SRrmsd), type = "l", lty = 1,
         ylab = "Y", main = "Multiple Lines Plot")
 ```
 
-### inspecting Ubx
-```{r}
-svdModel <- makeSVDModel(CV_motif, CV_alignment, Positions = c('N1','N2','T3','D4','A5','Y6','N7','N8'))
-svdModel$N7$keyPos
-
-```
-
-### predict for BARHL2
-```{r}
-BARHL2id <- which(CV_alignment$name == 'BARHL2')
-train_alignment <- CV_alignment#[-BARHL2id,]
-train_motif <- CV_motif#[-BARHL2id]
-
-svdModel <- makeSVDModel(train_motif, train_alignment, Positions = motifPoses)
-
-mutants <- c('TT','NR_6C','TA_6T','IN_6T')
-BARHL2seq <- CV_alignment$alignment[BARHL2id]
-BARHL2seqs <- rep(BARHL2seq,length(mutants))
-substr(BARHL2seqs, 46,46) <- substr(mutants,1,1)
-substr(BARHL2seqs, 53,53) <- substr(mutants,2,2)
-test_alignment <- data.frame(name = paste0('BARHL2_', mutants), alignment = BARHL2seqs)
-
-SVDmodelPredPSAM(svdModel, BARHL2seqs[1])
-BARHL2.pred <- lapply(test_alignment$alignment, function(x) SVDmodelPredPSAM(svdModel, x))
-
-mononucleotide_logo(frequency2ddG(CV_motif[[BARHL2id]]$matrix))
-for(i in 2:length(BARHL2.pred)){
-  plot <- mononucleotide_logo((frequency2ddG(BARHL2.pred[[i]])))
-  plot <- plot + ggplot2::ggtitle(paste0(test_alignment$name[i]))
-  plot(plot)
-}
-```

@@ -10,7 +10,8 @@ library(FamilyCode)
 ### Load motifs
 ```{r}
 library(FamilyCode)
-workDir <- 'SELEX_bHLH/'
+workDir <- 'intermediateData/bHLH/SELEX_bHLH/'
+rawData <- 'rawData/bHLH/'
 motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
 ```
 ### Input data sets
@@ -20,18 +21,10 @@ motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
 3: bHLH_ali: Alignment file
 
 ```{r}
-proBound_runDIR <- paste0(workDir, 'HTdata/')
-bHLH_info <- read.csv(file = paste0(workDir, "bHLH_info.csv"), row.names = 1)
+proBound_runDIR <- paste0(rawData, 'HTdata/')
+bHLH_info <- read.csv(file = paste0(rawData, "bHLH_info.csv"), row.names = 1)
 ```
-# Figure 1
-## Panel A
-```{r 1A}
-library(eulerr)
-vennTable <- unique(bHLH_info[,1:2])
-vennTable <- table(vennTable)
-vennTable <- vennTable == 1
-plot(euler(vennTable[, 1:3], shape = "ellipse"), quantities = TRUE)
-```
+
 ### Preparing variables for subsequent processes
 ```{r}
 proBound_files <- list.files(proBound_runDIR)
@@ -76,7 +69,7 @@ bHLH_model_info <- Motif_Table$table
 Input Alignment file generated with Clustal Omega and select the aligned DNA-binding Domain of the family.
 
 ```{r}
-bHLH_pbAlignment <- read.table(paste0(workDir, 'bHLH.sto'), quote="\"", fill = T)
+bHLH_pbAlignment <- read.table(paste0(rawData, 'bHLH.sto'), quote="\"", fill = T)
 name <- apply(bHLH_pbAlignment,1,function(x) strsplit(x[1],'/')[[1]][1])
 colnames(bHLH_pbAlignment) <- c('name','alignment')
 bHLH_pbAlignment$name <- name
@@ -110,56 +103,8 @@ CV_motif <- bHLH_motifs
 CV_alignment <- matchAliMotif(CV_motif, bHLH_pbAlignment)
 ```
 
-## Panel D 
-```{r 1D}
-library(readr)
-library(R.utils)
-
-mkdirs('logos')
-for(i in 1:nrow(bHLH_index)){
-  JSON_Lines <- readLines(paste0("HTdata/", bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
-  mono <- JSON2Matrix(JSON_Lines, mode = bHLH_index$motif_model[i])
-  plot <- mononucleotide_logo(mono, axes = F)
-  png(paste0('logos/',bHLH_index$gene_symbol[i],'.png'))
-  plot(plot)
-  dev.off()
-}
-```
-# Figure 2
-## Panel A
-```{r 2A}
-library(plotly)
-AAPosition <- 13
-motifPosition <- 'P-1'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
-plot%>%layout(scene=scene)
-```
-## Panel B
-```{r 2B}
-library(plotly)
-AAPosition <- 5
-motifPosition <- 'P-1'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
-plot%>%layout(scene=scene)
-```
-
-## Panel C
-```{r 2C}
-library(plotly)
-AAPosition <- 13
-motifPosition <- 'P-3'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
-plot%>%layout(scene=scene)
-```
 ### Make p-val table
-## Panel D
-```{r 2D}
+```{r}
 #genreate p-val tablle
 pvalTable <- getPvalTable(CV_motif, Alignment = CV_alignment, pos_index = motifPoses)
 #apply -log(10)
@@ -170,115 +115,9 @@ pvalTable[is.na(pvalTable)] <- 0
 gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
                   Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
 ```
-## Panel E
-```{r 2E}
-colorCode <- pvalTable$`P-1`
-colorCode[is.na(colorCode)] <- median(colorCode[!is.na(colorCode)])
-max <- max(colorCode)
-colorList <- colorCode/max*255
-colorList <- c(colorList[1:29],0,0,0,0,colorList[30:53])
 
-complexSample <- 'bHLH_processed.pse'
-addColorTemplate <- 'color 0x$colorCode$, polymer.protein and resi $resiNum$'
-script <- paste('load ', complexSample, sep = '')
-for(i in 1:length(colorList)){
-  colorCode <- rgb(colorList[i], 0, (255-colorList[i]), maxColorValue = 255)
-  colorCode <- gsub('#','',colorCode)
-  addScript <- gsub('\\$colorCode\\$',colorCode,addColorTemplate)
-  addScript <- gsub('\\$resiNum\\$', i, addScript)
-  script <- c(script, addScript)
-}
-run.pymol(pymol.dir = 'E:/pymol/pymol_app/PyMOLWin.exe',script = script)
-```
-# Figure 3
-## Panel A
-```{r 3A}
-library(plotly)
-AAPosition <- 13
-motifPosition <- 'P-1'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-Rmatirx <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'R']
-RTM <- matrix2tetrahedron(Rmatirx)
-meanPointR <- apply((RTM), 2, function(x) mean(x))
-Rmean <- tetrahedron2matrix(meanPointR)
-svd <- FamilyCode::matrixSVD(AAbp_Matrix)
-Allmean <- tetrahedron2matrix(svd$tetra_mean)
-AAbp_Matrix <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'R']
-AAbp_Matrix <- cbind.data.frame(AAbp_Matrix, X = Allmean)
-connect <- cbind.data.frame(Rmean = meanPointR, Allmean = svd$tetra_mean)
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
-
-plotTest <- plot_tetrahedron(AAbp_Matrix, color = T, size = 10)
-plotTest%>%
-  add_trace(connect,x = as.numeric(connect[1,1:2]),
-            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
-            type = 'scatter3d',
-            mode = 'lines',
-            line = list(width = 5),
-            opacity = 1,
-            showlegend = F
-  )%>%
-  add_trace(
-    type= "cone",
-    x= connect[1,1], y= connect[2,1], z= connect[3,1],
-    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
-    sizeref= 0.5,
-    colorscale = list(list(0, as.character('black')),
-                      list(1, as.character('black'))),
-    anchor = 'tip',
-    showscale= F
-  )%>%layout(scene=scene)
-
-rownames(Rmean) <- c('A','C','G','T')
-mononucleotide_logo(Rmean)
-
-```
-
-## Panel B
-```{r 3B}
-library(plotly)
-AAPosition <- 13
-motifPosition <- 'P-1'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-Rmatirx <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'V']
-RTM <- matrix2tetrahedron(Rmatirx)
-meanPointR <- apply((RTM), 2, function(x) mean(x))
-Rmean <- tetrahedron2matrix(meanPointR)
-svd <- FamilyCode::matrixSVD(AAbp_Matrix)
-Allmean <- tetrahedron2matrix(svd$tetra_mean)
-AAbp_Matrix <- AAbp_Matrix[,colnames(AAbp_Matrix) == 'V']
-AAbp_Matrix <- cbind.data.frame(AAbp_Matrix, X = Allmean)
-connect <- cbind.data.frame(Rmean = meanPointR, Allmean = svd$tetra_mean)
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
-
-plotTest <- plot_tetrahedron(AAbp_Matrix, color = T, size = 10)
-plotTest%>%
-  add_trace(connect,x = as.numeric(connect[1,1:2]),
-            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
-            type = 'scatter3d',
-            mode = 'lines',
-            line = list(width = 10),
-            opacity = 1,
-            showlegend = F
-  )%>%
-  add_trace(
-    type= "cone",
-    x= connect[1,1], y= connect[2,1], z= connect[3,1],
-    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
-    sizeref= 0.5,
-    colorscale = list(list(0, as.character('black')),
-                      list(1, as.character('black'))),
-    anchor = 'tip',
-    showscale= F
-  )%>%layout(scene=scene)
-
-rownames(Rmean) <- c('A','C','G','T')
-mononucleotide_logo(log(Rmean))
-
-```
 
 ### Show Base Line 
-##panel S2A
 ```{r}
 #550/600
 evaMatrix <- matrix(nrow = 4, ncol = length(motifPoses), data = 0)
@@ -289,141 +128,32 @@ for(pos in motifPoses){
   colnames(BaseLines.ddG) <- c('pred','true')
   BaseLines.PFM <- predTrue.ddG2frequency(BaseLines.ddG, PFM = T)
   plotPredTrue(BaseLines.ddG, xlab = 'Experiment 1 -ΔΔG/RT', ylab = 'Experiment 2 -ΔΔG/RT', main = paste0('Pair-wise experiment comparison at ',pos))
-  boxplot(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, member = length(ScreenPoses)*4, mean= F), ylim = c(0,1),
+  boxplot(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, member = 4, mean= F), ylim = c(0,1),
         main = paste0(pos,' Mean R^2 = ', round(groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, 
-                                                          member = length(ScreenPoses)*4, mean= T),4)))
+                                                          member = 4, mean= T),4)))
   plotPredTrue(BaseLines.PFM, xlab = 'Experiment 1', ylab = 'Experiment 2', main = paste0('Base Line PFM at ',pos))
-  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
-  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = length(ScreenPoses)*4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(BaseLines.PFM)/4)
+  boxplot(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(BaseLines.PFM$pred, BaseLines.PFM$true, 
-                                                     member = length(ScreenPoses)*4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(BaseLines.ddG$pred, 
         BaseLines.ddG$true, nrow(BaseLines.ddG), throughZero = T), 
         4), round(RMSD(BaseLines.ddG$pred, BaseLines.ddG$true), 
         4), round(groupedR2(BaseLines.PFM$pred, 
-        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = T), 
+        BaseLines.PFM$true, nrow(BaseLines.PFM), throughZero = F), 
         4)^(1/2), round(hit,4))
-  R2s <- groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, member = length(ScreenPoses)*4, mean= F)
+  R2s <- groupedR2(BaseLines.ddG$pred, BaseLines.ddG$true, member = 4, mean= F)
   R2s_BL[[pos]] <- R2s
 }
 evaMatrix_BL <- evaMatrix
 
 ```
 
-# Figure 4
-## Panel A
-```{r 4A}
-AAPosition <- 13
-motifPosition <- 'P-1'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-
-svd <- FamilyCode::matrixSVD(AAbp_Matrix)
-vCoord <- svd$v
-meanPointAll <- svd$tetra_mean
-connect <- matrix(nrow = 4, ncol = 3, data = 0)
-connect[4,] <- meanPointAll
-connect[1,] <- connect[4,] + vCoord[,1]
-connect[2,] <- connect[4,] + vCoord[,2]
-connect[3,] <- connect[4,] + vCoord[,3]
-
-
-tetrahedron <-  matrix(data = c(1,1,1,1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,-1,1,-1,1,-1,-1,-1,-1,1), nrow = 8, ncol = 3, byrow = TRUE)
-tetrahedron <- as.data.frame(tetrahedron)
-
-plotTest <- plot_tetrahedron(AAbp_Matrix, color = T, size = 10)
-
-
-plotTest <- plotTest%>%
-  add_trace(tetrahedron, x = connect[c(1,4),1],
-            y=connect[c(1,4),2],z=connect[c(1,4),3],color = I('grey'),
-            type = 'scatter3d',
-            mode = 'lines',
-            line = list(width = 5),
-            opacity = 0.5,
-            showlegend = F
-  )%>%
-  add_trace(
-    type= "cone",
-    x= connect[1,1], y= connect[1,2], z= connect[1,3],
-    u= connect[1,1] - connect[4,1], v= connect[1,2] - connect[4,2], w= connect[1,3] - connect[4,3],
-    sizeref= 0.2,
-    colorscale = list(list(0, as.character('grey')),
-                      list(1, as.character('grey'))),
-    anchor = 'tip',
-    showscale= F
-  )%>%
-  add_trace(tetrahedron, x = connect[c(2,4),1],
-            y=connect[c(2,4),2],z=connect[c(2,4),3],color = I('grey'),
-            type = 'scatter3d',
-            mode = 'lines',
-            line = list(width = 5),
-            opacity = 0.5,
-            showlegend = F
-  )%>%
-  add_trace(
-    type= "cone",
-    x= connect[2,1], y= connect[2,2], z= connect[2,3],
-    u= connect[2,1] - connect[4,1], v= connect[2,2] - connect[4,2], w= connect[2,3] - connect[4,3],
-    sizeref= 0.2,
-    colorscale = list(list(0, as.character('grey')),
-                      list(1, as.character('grey'))),
-    anchor = 'tip',
-    showscale= F
-  )%>%
-  add_trace(tetrahedron, x = connect[c(3,4),1],
-            y=connect[c(3,4),2],z=connect[c(3,4),3],color = I('grey'),
-            type = 'scatter3d',
-            mode = 'lines',
-            line = list(width = 5),
-            opacity = 0.5,
-            showlegend = F
-  )%>%
-  add_trace(
-    type= "cone",
-    x= connect[3,1], y= connect[3,2], z= connect[3,3],
-    u= connect[3,1] - connect[4,1], v= connect[3,2] - connect[4,2], w= connect[3,3] - connect[4,3],
-    sizeref= 0.2,
-    colorscale = list(list(0, as.character('grey')),
-                      list(1, as.character('grey'))),
-    anchor = 'tip',
-    showscale= F
-  )%>%
-  add_text(x = connect[c(1:3),1], y = connect[c(1:3),2], z = connect[c(1:3),3], text = c('PC1', 'PC2','PC3'),
-           showlegend = F)
-
-  axx <- list(
-    title = "",
-    zeroline = TRUE,
-    showline = TRUE,
-    showticklabels = TRUE,
-    showgrid = TRUE
-  )
-scene = list(camera = list(eye = list(x = 0, y = 0, z = -2)))
-
-plotTest%>%layout(scene=scene)
-```
-
-## Panel B
-```{r 4B}
-#550/600
-pos <- 13
-u <- 1
-svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
-x <- svd$u[,u]
-y <- substr(CV_alignment$alignment, pos,pos)
-dt <- data.frame(AA = y, u = x)
-dt$col <- AAcolor(dt$AA)
-dt <- arrange(dt,u)
-colScheme <- unique(dt[,c(1,3)])
-plot(x = dt$u, y = 1:52/52, col = dt$col, pch = 19, main = paste0('eCDF for PC',u,' at position ', pos), xlab = paste0('PC',u), ylab = 'Frequency', cex = 1, cex.lab = 1.2, cex.axis = 1.2)
-legend(x = "topleft", legend = colScheme$AA, col =colScheme$col, pch = 19, cex = 1, bty = 'n')
-```
 
 ### leave-one-out test for all available samples
-##panel C S2B S3A
 Perform leave-one-out testing for accuracy with all available training samples.
 
-```{r 4C}
+```{r}
 #make predictions
 FCpredTrueList <- list()
 
@@ -458,20 +188,19 @@ for(pos in motifPoses){
   #plot frequency
 
   plotPredTrue(predTrue.PFM, main = paste0('FamilyCode prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),main = paste0(pos, ' Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
         predTrue$true, nrow(predTrue), throughZero = T), 
         4), round(RMSD(predTrue$pred, predTrue$true), 
         4), round(groupedR2(predTrue.PFM$pred, 
-        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+        predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
         4)^(1/2), round(hit,4))
 }
 evaMatrix_FC <- evaMatrix
 ```
 
-### Compair with closest sequence prediction 
-## panel S2C
+### Compair with closest paralog prediction 
 from paper:
 Weirauch, M. T., Yang, A., Albu, M., Cote, A. G., Montenegro-Montero, A., Drewe, P., ... & Hughes, T. R. (2014). Determination and inference of eukaryotic transcription factor sequence specificity. Cell, 158(6), 1431-1443.
 ```{r}
@@ -497,15 +226,15 @@ for(pos in motifPoses){
                                                           member = 4, mean= T),4)))
   
   plotPredTrue(predTrue.PFM, main = paste0('Closest sequence prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
       predTrue$true, nrow(predTrue), throughZero = T), 
       4), round(RMSD(predTrue$pred, predTrue$true), 
       4), round(groupedR2(predTrue.PFM$pred, 
-      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+      predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
       4)^(1/2), round(hit,4))
   R2s <- groupedR2(predTrue$pred, predTrue$true, member = 4, mean= F)
   R2s_CS[[pos]] <- R2s
@@ -515,7 +244,6 @@ evaMatrix_CS <- evaMatrix
 ```
 
 ### Comparing prediction result with Similarity regression
-## panel S2D
 from paper:
 Lambert, S. A., Yang, A. W., Sasse, A., Cowley, G., Albu, M., Caddick, M. X., ... & Hughes, T. R. (2019). Similarity regression predicts evolution of transcription factor sequence specificity. Nature genetics, 51(6), 981-989.
 Figure S6/S7
@@ -526,7 +254,7 @@ SRpredTrueList <- list()
 for(pos in motifPoses){
   mod_alignment <- CV_alignment
   mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
-  predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+  predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = paste0(rawData,'SimilarityRegression/F082_1.97d.json'))
   #delete unsuccessful predictions
   predTrue <- predTrue[!is.na(predTrue$pred),]
   SRpredTrueList[[pos]] <- predTrue
@@ -546,15 +274,15 @@ for(pos in motifPoses){
                                                           member = 4, mean= T),4)))
   
   plotPredTrue(predTrue.PFM, main = paste0('Similarity regression prediction PFM at ',pos))
-  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
-  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F)^(1/2), ylim = c(0,1),
+  hit <- sum(round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2),4) > 0.5)/(nrow(predTrue.PFM)/4)
+  boxplot(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, member = 4, mean= F, throughZero = F)^(1/2), ylim = c(0,1),
         main = paste0(pos, 'Mean PCC = ', round(groupedR2(predTrue.PFM$pred, predTrue.PFM$true, 
-                                                     member = 4, mean= T)^(1/2),4), ' Accuracy = ', round(hit,4)))
+                                                     member = 4, mean= T, throughZero = F)^(1/2),4), ' Accuracy = ', round(hit,4)))
   evaMatrix[,pos] <- c(round(groupedR2(predTrue$pred, 
     predTrue$true, nrow(predTrue), throughZero = T), 
     4), round(RMSD(predTrue$pred, predTrue$true), 
     4), round(groupedR2(predTrue.PFM$pred, 
-    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = T), 
+    predTrue.PFM$true, nrow(predTrue.PFM), throughZero = F), 
     4)^(1/2), round(hit,4))
   R2s <- groupedR2(predTrue$pred, predTrue$true, member = 4, mean= F)
   R2s_SR[[pos]] <- R2s
@@ -562,11 +290,9 @@ for(pos in motifPoses){
 evaMatrix_SR <- evaMatrix
 ```
 Write Evaluation matrix
-## panel S7A
 ```{r}
 evaMatrix <- rbind.data.frame(evaMatrix_BL, evaMatrix_FC,  evaMatrix_SR, evaMatrix_CS)
 evaMatrix <- evaMatrix[c((1:4)*4-3, (1:4)*4-2, (1:4)*4-1,(1:4)*4), ]
-write.csv(evaMatrix, 'evaMatrix_bHLH_SELEX.csv')
 ```
 
 ## SVD prediction for single and double mutants
@@ -574,41 +300,30 @@ write.csv(evaMatrix, 'evaMatrix_bHLH_SELEX.csv')
 load SELEX motifs
 ```{r}
 groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
-SELEXFile_Template <- 'SELEXdata/$modelFile$/fit.models.consensus.json'
+SELEXFile_Template <- paste0(rawData,'SELEXdata/$modelFile$/fit.models.consensus.json')
 SELEX_info <- data.frame(gene_symbol = groups, study = 'pb')
 SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'CANNTG', pos_index = c('P-3','P-2','P-1','P1','P2','P3'), checkSymmetry = T, withTable = F, useMode = c(1,2,1,1,1,1,1,1))
 ```
-# Figure 5
-## Panel B
-```{r 5B}
-result <- readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))
-mono <- JSON2Matrix(result, mode = 1)
-mononucleotide_logo(frequency2ddG(mono))
-result <- readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))
-mono <- JSON2Matrix(result, mode = 1)
-mononucleotide_logo(frequency2ddG(mono))
-```
 
-## Panel C
-```{r 5C}
-result <- readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))
+
+```{r 5}
+result <- readLines(paste0(rawData,"SELEXdata/HWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
-result <- readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))
+result <- readLines(paste0(rawData,"SELEXdata/AWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
-test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData,"SELEXdata/HWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData,"HTdata/HES2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
 plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('HES2 replicate'))
-test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData,"SELEXdata/AWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData,"HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
 plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('ASCL2 replicate'))
 ```
 
-## Panel E
-```{r 5E}
+```{r}
 library(readxl)
 library(ggplot2)
 library(ggsignif)
-bandIntensity <- read_excel("bandIntensity.xlsx")
+bandIntensity <- read_excel(paste0(rawData,"bandIntensity.xlsx"))
 
 proportions <- bandIntensity$...6[c(1:6,13:18)]
 proportions <- c(proportions[1:3], exp(1.788), 8.09,
@@ -654,8 +369,7 @@ Applying the SVD-regression model to predict the binding motifs of the single an
 
 
 ### tetrahedron dddG
-## Panel 5F,G
-```{r 5FG}
+```{r}
 svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
 svdModelpreTrain <- trainSVD.Iterative(svd, CV_alignment, Ftest_pVal = 0.001)
 keyPos <- svdModelpreTrain$keyPos
@@ -672,7 +386,7 @@ test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c
                              '--ARKNERERNRRKLVNLGFQALRQHVPHGGASKKLSKVETLRSAVEYIRALQ')
                              )
 test_motifs <- SELEX_motifs[-c(1,5)]
-pred_motifs <- predict(svdModel, test_alignment[], zero = 0.001, useSimilarAA = T)
+pred_motifs <- predict(svdModel, test_alignment[], zero = 0.01, useSimilarAA = T)
 #Comparing between true and predicted testing set motifs 
 
 predT <- matrix2tetrahedron(pred_motifs)
@@ -689,8 +403,8 @@ pred <- predT[1:6,] - wtT[c(1,1,1,2,2,2),]
 true <- trueT[1:6,] - wtT[c(1,1,1,2,2,2),]
 pred <- tetrahedron2matrix(pred)
 true <- tetrahedron2matrix(true)
-pred[pred < 0] <- 0.001
-true[true < 0] <- 0.001
+pred[pred < 0.01] <- 0.01
+true[true < 0.01] <- 0.01
 
 pred <- frequency2ddG(pred)
 true <- frequency2ddG(true)
@@ -745,54 +459,12 @@ t.test(bootstrap[,2], bootstrap[,6], paired = T)$p.value
 
 ```
 
-### inspection of AA20 and AA50 
-## panel S1B
-```{r}
-AAPosition <- 20
-motifPosition <- 'P-1'
-AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
-plot%>%layout(scene=scene)
-
-AAs <- unique(colnames(AAbp_Matrix))
-plot(1)
-legend(x = "topleft", legend = AAs, col = AAcolor(AAs), pch = 19, cex = 1, bty = 'n')
-```
-
-## panel S1D
-```{r S4}
-P22 <- substr(CV_alignment$alignment,22, 22)
-P50 <- substr(CV_alignment$alignment,50, 50)
-
-table(AAclassify(P22), AAclassify(P50))
-Encode22 <- attr(AAclassify(P22), 'encode')
-Encode50 <- attr(AAclassify(P50), 'encode')
-Interactions <- AAinteraction(Encode22, Encode50)
-table(Interactions, apply(posMatrix, 2, function(x) rownames(posMatrix)[which.max(x)]))
-
-paste0(Interactions, '=>',apply(posMatrix, 2, function(x) rownames(posMatrix)[which.max(x)]))
-paste0(AAclassify(P22), '+',AAclassify(P50),'=',Interactions)
-paste0(P22, '+',P50,'=',Interactions,  '=>',apply(posMatrix, 2, function(x) rownames(posMatrix)[which.max(x)]))
-
-colnames(posMatrix) <- Interactions
-colnames(posMatrix)[colnames(posMatrix) == 'h-bond'] <- 'Q'
-colnames(posMatrix)[colnames(posMatrix) == 'electro-static'] <- 'E'
-colnames(posMatrix)[colnames(posMatrix) == 'hydrophobic'] <- 'L'
-colnames(posMatrix)[colnames(posMatrix) == 'repel'] <- 'W'
-
-plot_tetrahedron(ddG2frequency(posMatrix), color = T, vertex = F, size = 10)
-#plot(1)
-
-#legend(x = "topleft", legend = c('H-bond','Electro-static', 'Hydrophobic', 'Repel'), col = AAcolor(c('Q', 'E', 'L', 'W')), pch = 19, cex = 1, bty = 'n')
-```
-
 # Supplemental data 1
 ```{r SD1}
 library(R.utils)
 mkdirs('S1')
 for(i in 1:nrow(bHLH_index)){
-  result <- readLines(paste0("HTdata/",
+  result <- readLines(paste0(rawData,"HTdata/",
                                      bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
   mono <- JSON2Matrix(result, mode = bHLH_index$motif_model[i])
   plot <- mononucleotide_logo(mono)
@@ -852,6 +524,7 @@ for(j in 1:56){
 # Supplemental data 4
 ```{r SD4}
 #1400/400
+mkdirs('S4')
 pos_index <- c('P1','P2','P3')
 for(i in 1:3){
   posMatrix <- gene2pos(CV_motif, pos = pos_index[i])
@@ -859,10 +532,12 @@ for(i in 1:3){
   #ANOVA test on the level of association between SVD Principal components and residue type
   svd.pval <- svdANOVA(svd, CV_alignment)
   #Plot p-vals 
+  png(paste0('S4/PC_',i,'.png'), width = 1400, height = 400)
   plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 3, xlab = 'AA Position', ylab = '-log p-val', ylim = c(0, (1.1*max(svd.pval[,1:3]))) ,main = paste0('Statistical significance of ANOVA test for PCs at DNA position -', i, '/+',i))
   lines(svd.pval$X2, pch = 1, col = "green", lwd = 3)
   lines(svd.pval$X3, pch = 1, col = "blue", lwd = 3)
-  #legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
+  legend(l, x = "topright", legend = c('PC1', 'PC2', 'PC3'), lwd = 2, col =c('red','green','blue'), lty=1, cex = 0.8, bty = 'n')
+  dev.off()
 }
 
 ```

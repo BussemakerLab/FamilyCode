@@ -5,11 +5,10 @@ output: html_notebook
 ### Load SELEX motifs
 ```{r}
 library(FamilyCode)
-workDir <- 'SELEX_bHLH/'
+rawData <- 'rawData/bHLH/'
 motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
-#motifPoses <- c('P-4', 'P-3','P-2','P-1','P1','P2','P3', 'P4')
-proBound_runDIR <- paste0(workDir, 'HTdata/')
-bHLH_info <- read.csv(file = paste0(workDir, "bHLH_info.csv"), row.names = 1)
+proBound_runDIR <- paste0(rawData, 'HTdata/')
+bHLH_info <- read.csv(file = paste0(rawData, "bHLH_info.csv"), row.names = 1)
 proBound_files <- list.files(proBound_runDIR)
 modelFile_Template <- paste0(proBound_runDIR, '$modelFile$/result/fit.models.consensus.json')
 rows <- c("A", "C", "G", "T")
@@ -33,7 +32,7 @@ bHLH_model_info <- Motif_Table$table
 del <- which(bHLH_model_info$symmetry == 0)
 all_mono_motifs <- all_mono_motifs[-del]
 bHLH_model_info <- bHLH_model_info[-del,]
-bHLH_pbAlignment <- read.table(paste0(workDir, 'bHLH.sto'), quote="\"", fill = T)
+bHLH_pbAlignment <- read.table(paste0(rawData, 'bHLH.sto'), quote="\"", fill = T)
 name <- apply(bHLH_pbAlignment,1,function(x) strsplit(x[1],'/')[[1]][1])
 colnames(bHLH_pbAlignment) <- c('name','alignment')
 bHLH_pbAlignment$name <- name
@@ -68,7 +67,7 @@ all_motif_SELEX <- all_mono_motifs
 load in house SELEX results 
 ```{r}
 groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
-SELEXFile_Template <- 'SELEXdata/$modelFile$/fit.models.consensus.json'
+SELEXFile_Template <- paste0(rawData,'SELEXdata/$modelFile$/fit.models.consensus.json')
 SELEX_info <- data.frame(gene_symbol = groups, seq = c('RKSLKPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
                              'RKSLRPLLEKRRRARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
                              'RKSLKPLLEKRRVARINQSLSQLKGLLPENSNCSKLEKADVLEMTVRFLQEL-',
@@ -83,10 +82,10 @@ SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'CANNT
 ### Import library and data
 ```{r}
 library(R.utils)
-workDir <- 'PBM_bHLH/'
+workDir <- 'intermediateData/bHLH/PBM_bHLH/'
 #download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
-TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
-Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+TF_Information <- read.delim(paste0(rawData, "TF_Information.txt"))
+Zscores <- read.delim(paste0(rawData,"Zscores.txt"))
 #filter for PBM data with Z-scores
 TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
 rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
@@ -285,6 +284,9 @@ pvalTable[is.na(pvalTable)] <- 0
 #plot heatmap
 gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
                   Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+
+saveRDS(CV_alignment, file = paste0('intermediateData/bHLH/bHLH_SELEX_PBM_CV_alignment.rsd'))
+saveRDS(CV_motif, file = paste0('intermediateData/bHLH/bHLH_SELEX_PBM_CV_motif.rsd'))
 ```
 
 ### Test on FamilyCode prediction with leave-one-out CV
@@ -413,7 +415,7 @@ evaMatrix_SR <- evaMatrix
 ```{r}
 evaMatrix <- rbind.data.frame(evaMatrix_BL, evaMatrix_FC,  evaMatrix_SR, evaMatrix_CS)
 evaMatrix <- evaMatrix[c((1:4)*4-3, (1:4)*4-2, (1:4)*4-1,(1:4)*4), ]
-write.csv(evaMatrix, 'evaMatrix_bHLH_SELEX+PBM.csv')
+write.csv(evaMatrix, paste0('intermediateData/bHLH/evaMatrix_bHLH_SELEX+PBM.csv'))
 ```
 
 
@@ -472,7 +474,7 @@ predTrueDeMasi <- data.frame(pred = as.numeric(unlist(pred)), true = as.numeric(
 plotPredTrue(predTrueDeMasi[c(33:56),], main = paste0('Similarity regression prediction -ΔΔG/RT at P-/+1'))
 ```
 
-### Test on in house SEELX data
+### Test on in house SELEX data
 ```{r}
 test_motifs <- SELEX_motifs[-c(1,5)]
 test_alignment <- data.frame(name = paste0(groups, '_pb')[-c(1,5)], alignment =c(
@@ -517,40 +519,6 @@ predTrue <- rbind.data.frame(predTrue1, predTrue2)
 plotPredTrue(predTrue, xlab = 'Experiment', ylab = 'Predicted', main = paste0('FamilyCode prediction -ΔΔG/RT at P-/+1'))
 ```
 
-### score PBM with cisBP motif with probound
-```{r}
-mkdirs(paste0(workDir,'JSONs_FC'))
-CTs <- list.files(paste0(workDir,'CountTables/'))
-library(jsonlite)
-sampleJSON <- 'sample.json'
-json <- fromJSON(sampleJSON)
-json$modelSettings$bindingModes$size <- 6
-for(i in 1:nrow(CV_alignment)){
-  testID <- CV_alignment$name[i]
-  motifID <- TFDirect$Motif_ID[TFDirect$TF_Name == testID]
-  if(length(motifID) == 0){
-    next()
-  }
-  if(length(which(paste0(motifID[1],'_CT.tsv') == CTs)) == 0){
-    next()
-  }
-  svdModel <- makeSVDModel(CV_motif[-i], CV_alignment[-i,], Positions = motifPoses)
-  predModel <- SVDmodelPredPSAM(svdModel, CV_alignment$alignment[i])
-  mononucleotide_logo(frequency2ddG(predModel))
-  pwm <- apply(frequency2ddG(predModel), 2, function(x) x-max(x))
-  json$coefficients$bindingModes$mononucleotide <- list(as.numeric(pwm))
-  outJSON <- paste0(workDir,'JSONs_FC/',motifID[1],'.json')
-  write(toJSON(json, pretty = TRUE), outJSON)
-  print(paste0(i,': ', nrow(CV_alignment)))
-}
-```
 
-```{r}
-FCpwmPCC <- read.table(paste0(workDir,"FCpwmPCC.txt"), quote="\"", comment.char="")
-median(FCpwmPCC$V1)
-median(pbPCC$V1)
-median(cisBPPCC$V1)
 
-boxplot(FCpwmPCC$V1, pbPCC$V1, cisBPPCC$V1, names = c('FamilyCode','Probound', 'cisBP'))
-```
 

@@ -12,7 +12,7 @@ library(FamilyCode)
 # Load bHLH SELEX data
 ```{r}
 library(FamilyCode)
-workDir <- 'SELEX_bHLH/'
+rawData <- 'rawData/bHLH/'
 motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
 ```
 
@@ -21,8 +21,8 @@ motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
 3: bHLH_ali: Alignment file
 
 ```{r}
-proBound_runDIR <- paste0(workDir, 'HTdata/')
-bHLH_info <- read.csv(file = paste0(workDir, "bHLH_info.csv"), row.names = 1)
+proBound_runDIR <- paste0(rawData, 'HTdata/')
+bHLH_info <- read.csv(file = paste0(rawData, "bHLH_info.csv"), row.names = 1)
 ```
 
 ```{r}
@@ -64,7 +64,7 @@ bHLH_model_info <- Motif_Table$table
 Input Alignment file generated with Clustal Omega and select the aligned DNA-binding Domain of the family.
 
 ```{r}
-bHLH_pbAlignment <- read.table(paste0(workDir, 'bHLH.sto'), quote="\"", fill = T)
+bHLH_pbAlignment <- read.table(paste0(rawData, 'bHLH.sto'), quote="\"", fill = T)
 name <- apply(bHLH_pbAlignment,1,function(x) strsplit(x[1],'/')[[1]][1])
 colnames(bHLH_pbAlignment) <- c('name','alignment')
 bHLH_pbAlignment$name <- name
@@ -102,12 +102,12 @@ CV_alignment <- matchAliMotif(CV_motif, bHLH_pbAlignment)
 library(readr)
 library(R.utils)
 
-mkdirs('logos')
+mkdirs('Figure1')
 for(i in 1:nrow(bHLH_index)){
-  JSON_Lines <- readLines(paste0("HTdata/", bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
+  JSON_Lines <- readLines(paste0(rawData,"HTdata/", bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
   mono <- JSON2Matrix(JSON_Lines, mode = bHLH_index$motif_model[i])
   plot <- mononucleotide_logo(mono, axes = F)
-  png(paste0('logos/',bHLH_index$gene_symbol[i],'.png'))
+  png(paste0('Figure1/',bHLH_index$gene_symbol[i],'.png'))
   plot(plot)
   dev.off()
 }
@@ -166,7 +166,7 @@ max <- max(colorCode)
 colorList <- colorCode/max*255
 colorList <- c(colorList[1:29],0,0,0,0,colorList[30:53])
 
-complexSample <- 'bHLH_processed.pse'
+complexSample <- 'intermediateData/bHLH/bHLH_processed.pse'
 addColorTemplate <- 'color 0x$colorCode$, polymer.protein and resi $resiNum$'
 script <- paste('load ', complexSample, sep = '')
 for(i in 1:length(colorList)){
@@ -176,7 +176,7 @@ for(i in 1:length(colorList)){
   addScript <- gsub('\\$resiNum\\$', i, addScript)
   script <- c(script, addScript)
 }
-run.pymol(pymol.dir = 'E:/pymol/pymol_app/PyMOLWin.exe',script = script)
+#run.pymol(pymol.dir = 'PyMOLWin.exe',script = script)
 
 ```
 
@@ -189,9 +189,6 @@ plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
 scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
 plot%>%layout(scene=scene)
 
-#AAs <- unique(colnames(AAbp_Matrix))
-#plot(1)
-#legend(x = "topleft", legend = AAs, col = AAcolor(AAs), pch = 19, cex = 1, bty = 'n')
 ```
 
 ```{r S2D}
@@ -454,7 +451,7 @@ pos <- 'P-1'
 
 mod_alignment <- CV_alignment
 mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
-predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = paste0(rawData, 'SimilarityRegression/F082_1.97d.json'))
 
 
 plotPredTrue(predTrue, main = paste0('Similarity regression at ',pos))
@@ -464,30 +461,30 @@ plotPredTrue(predTrue, main = paste0('Similarity regression at ',pos))
 #Figure 4
 ```{r}
 groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
-SELEXFile_Template <- 'SELEXdata/$modelFile$/fit.models.consensus.json'
+SELEXFile_Template <- paste0(rawData, 'SELEXdata/$modelFile$/fit.models.consensus.json')
 SELEX_info <- data.frame(gene_symbol = groups, study = 'pb')
 SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'CANNTG', pos_index = c('P-3','P-2','P-1','P1','P2','P3'), checkSymmetry = T, withTable = F, useMode = c(1,2,1,1,1,1,1,1))
 ```
 
 ```{r 4B}
-result <- readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))
+result <- readLines(paste0(rawData, "HTdata/HES2_Yin2017/result/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
-result <- readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))
+result <- readLines(paste0(rawData, "HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
 ```
 
 ```{r 4C}
-result <- readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))
+result <- readLines(paste0(rawData, "SELEXdata/HWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
-result <- readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))
+result <- readLines(paste0(rawData, "SELEXdata/AWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
-test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/HWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/HES2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData, "SELEXdata/HWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData, "HTdata/HES2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
 plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('HES2 replicate'))
-test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("SELEXdata/AWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0("HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
+test <- data.frame(pred = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData, "SELEXdata/AWT_pb/fit.models.consensus.json"))))[,4:6]), true = as.numeric(frequency2ddG(JSON2Matrix(readLines(paste0(rawData, "HTdata/ASCL2_Yin2017/result/fit.models.consensus.json"))))[,4:6]))
 plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT', main = paste0('ASCL2 replicate'))
 ```
 
@@ -496,7 +493,7 @@ plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT'
 library(readxl)
 library(ggplot2)
 library(ggsignif)
-bandIntensity <- read_excel("bandIntensity.xlsx")
+bandIntensity <- read_excel(paste0(rawData, "bandIntensity.xlsx"))
 
 proportions <- bandIntensity$...6[c(1:6,13:18)]
 proportions <- c(proportions[1:3], exp(1.788), 8.09,
@@ -633,10 +630,10 @@ plotTest%>%
 ```{r}
 library(FamilyCode)
 library(R.utils)
-workDir <- 'PBM_bHLH/'
+workDir <- 'intermediateData/bHLH/PBM_bHLH/'
 #download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
-TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
-Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+TF_Information <- read.delim(paste0(rawData, "TF_Information.txt"))
+Zscores <- read.delim(paste0(rawData,"Zscores.txt"))
 #filter for PBM data with Z-scores
 TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
 rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
@@ -690,8 +687,14 @@ for(i in 1:nrow(gene_ids)){
 
 geneInfo <- geneInfo[!is.na(geneInfo$seq),]
 #write sequences as fasta to
-#writeFasta(geneInfo, paste0(workDir,'TF.fa'))
+writeFasta(geneInfo, paste0(workDir,'TF.fa'))
 ```
+
+Use hmmalign to align the output sequences with the Homeo Domain HMM model from pfam entry PF00010
+```{}
+hmmalign -o TF.sto bHLH.hmm TF.fa
+```
+select only the columns aligned with the hmm file and save as TFhmm.sto
 
 ```{r}
 ali <- read.table(paste0(workDir,"TFhmm.sto"), quote="\"", fill = T)
@@ -778,8 +781,6 @@ for(i in 1:length(unique(all_motifs$gene_symbol))){
   motifScore <- c(motifScore,add$score[1])
   motifs_arranged <- rbind.data.frame(motifs_arranged, add)
 }
-#Plot distribution of lowest motif matching score
-#plot.ecdf(as.numeric(motifScore))
 ```
 
 ```{r}
@@ -848,10 +849,9 @@ plotPredTrue(predTrue, main = paste0('Closest-paralog prediction at ',pos))
 ```
 
 ```{r S6D}
-
 mod_alignment <- CV_alignment
 mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
-predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = 'cisBP_bHLH/F082_1.97d.json')
+predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = paste0(rawData, 'SimilarityRegression/F082_1.97d.json'))
 #delete unsuccessful predictions
 predTrue <- predTrue[!is.na(predTrue$pred),]
 
@@ -901,7 +901,6 @@ predict ΔΔΔG using tetrahedron distance
 
 ```{r S8C}
 svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
-#svdModel <- trainSVD(svd, CV_alignment, no.keyPos = unlist(lapply(keyPos,length)), keyPos = keyPos)
 svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(1,1,1), keyPos = list(c(13), c(13), c(13)))
 #Predict binding motifs for test set
 test_alignment <- data.frame(name = DeMasiInfo$name, alignment = DeMasiInfo$seq)
@@ -928,11 +927,10 @@ plotPredTrue(predTrue, main = 'FamilyCode prediction for HLH-1 mutants', xlab = 
 
 ```
 ```{r S8D}
-HLH1WT <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1WT.tsv", header=FALSE)
-HLH1L13V <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1L13V.tsv", header=FALSE)
-HLH1L13R <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1L13R.tsv", header=FALSE)
-HLH1L13T <- read.delim("E:/Desktop/FamilyCode/deepPBS/HLH1/HLH1L13T.tsv", header=FALSE)
-
+HLH1WT <- read.delim("rawData/deepPBS/HLH1/HLH1WT.tsv", header=FALSE)
+HLH1L13V <- read.delim("rawData/deepPBS/HLH1/HLH1L13V.tsv", header=FALSE)
+HLH1L13R <- read.delim("rawData/deepPBS/HLH1/HLH1L13R.tsv", header=FALSE)
+HLH1L13T <- read.delim("rawData/deepPBS/HLH1/HLH1L13T.tsv", header=FALSE)
 PBSmodels <- list(HLH1L13R, HLH1L13T, HLH1L13V, HLH1WT, HLH1L13R, HLH1L13T, HLH1L13V, HLH1WT)
 pred_motifs <- data.frame(NULL)
 for(i in 1:length(PBSmodels)){
@@ -968,13 +966,13 @@ plotPredTrue(predTrue, main = 'DeepPBS prediction for HLH-1 mutants', xlab = 'De
 
 # Load HD SELEX data
 ```{r}
-library(FamilyCode)
-workDir <- 'SELEX_HD/'
+workDir <- 'intermediateData/HD/PBM_HD/'
+rawData <- 'rawData/HD/'
 motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
 #loadMotifs
-proBound_DIR <- paste0(workDir, 'consensus_fits/')
-template <- paste0(workDir, 'consensus_fits/$modelFile$.consensus.json')
-gene_symbol_factor_ids <- read.csv(paste0(workDir, 'gene_symbol_factor_ids.csv'), row.names=1)
+proBound_DIR <- paste0(rawData, 'consensus_fits/')
+template <- paste0(rawData, 'consensus_fits/$modelFile$.consensus.json')
+gene_symbol_factor_ids <- read.csv(paste0(rawData, 'gene_symbol_factor_ids.csv'), row.names=1)
 files <- list.files(proBound_DIR, pattern = 'consensus')
 files <- unlist(lapply(strsplit(files, '\\.'), function(x) x[[1]][1]))
 gene_symbol <- unlist(lapply(strsplit(files, '_'), function(x) x[[1]][1]))
@@ -1006,7 +1004,7 @@ plot.ecdf(as.numeric(HDfiltered_table$score))
 HDfiltered_table <- HDfiltered_table[HDfiltered_table$score < 1,]
 
 #prepare alignment
-HD_ali <- read.table(paste0(workDir,"HD_hmm.sto"), quote="\"", fill = T)
+HD_ali <- read.table(paste0(rawData,"HD_hmm.sto"), quote="\"", fill = T)
 HD_ali$V1 <- apply(HD_ali, 1, function(x) strsplit(x[1],'/')[[1]][1])
 colnames(HD_ali) <- c('name','alignment')
 
@@ -1059,12 +1057,10 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
 
 # Load HD PBM data
 ```{r}
-library(FamilyCode)
 library(R.utils)
-workDir <- 'PBM_HD/'
 #download from cisBP 'bulk download' tab, inducing Z-score and TF_Information
-TF_Information <- read.delim(paste0(workDir, "TF_Information.txt"))
-Zscores <- read.delim(paste0(workDir,"Zscores.txt"))
+TF_Information <- read.delim(paste0(rawData, "TF_Information.txt"))
+Zscores <- read.delim(paste0(rawData,"Zscores.txt"))
 #filter for PBM data with Z-scores
 TFDirect <- TF_Information[TF_Information$TF_Status == 'D',]
 rawPBM <- substr(colnames(Zscores)[-1], 1, 11)
@@ -1211,10 +1207,10 @@ all_motif <- c(HD_motif_SELEX, HD_motif_PBM)
 CV_alignment <- rbind.data.frame(HD_alignment_SELEX, HD_alignment_PBM[-PBM_int,])
 CV_motif <- c(HD_motif_SELEX, HD_motif_PBM[-PBM_int])
 nrow(CV_alignment) == length(CV_motif)
-saveRDS(CV_alignment, file = 'HD_SELEX_PBM_CV_alignment.rsd')
-saveRDS(CV_motif, file = 'HD_SELEX_PBM_CV_motif.rsd')
-CV_alignment <- readRDS('HD_SELEX_PBM_CV_alignment.rsd')
-CV_motif <- readRDS('HD_SELEX_PBM_CV_motif.rsd')
+saveRDS(CV_alignment, file = paste0('intermediateData/HD/HD_SELEX_PBM_CV_alignment.rsd'))
+saveRDS(CV_motif, file =  paste0('intermediateData/HD/HD_SELEX_PBM_CV_motif.rsd'))
+CV_alignment <- readRDS( paste0('intermediateData/HD/HD_SELEX_PBM_CV_alignment.rsd'))
+CV_motif <- readRDS( paste0('intermediateData/HD/HD_SELEX_PBM_CV_motif.rsd'))
 ```
 
 # Figure 5
@@ -1231,7 +1227,6 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
 ```
 
 ```{r 5B}
-
 AAPosition <- 5
 motifPosition <- 'D4'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
@@ -1242,11 +1237,11 @@ plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
 # Figure S9
 ```{r S9}
 library(R.utils)
-mkdirs('HDlogos')
+mkdirs('FigureS9')
 for(i in 1:length(CV_motif)){
   mono <- CV_motif[[i]]$matrix
   plot <- mononucleotide_logo(frequency2ddG(mono), axes = F, labels = F)
-  png(paste0('HDlogos/',CV_alignment$name[i],'_',substr(CV_alignment$alignment[i], 5,15), '-',substr(CV_alignment$alignment[i], 44,54),'.png'),
+  png(paste0('FigureS9/',CV_alignment$name[i],'_',substr(CV_alignment$alignment[i], 5,15), '-',substr(CV_alignment$alignment[i], 44,54),'.png'),
        width = 600, height = 200,)
   plot(plot)
   dev.off()
@@ -1259,12 +1254,13 @@ suppressMessages(library(readxl))
 suppressMessages(library(FamilyCode))
 suppressMessages(library(dplyr))
 options(warn = -1)
-workDir <- 'KockHDPBM/'
-KockMatrix <- readRDS(paste0(workDir,'IntensityMatrix.rds'))
+rawData <- 'rawData/Kock_HD/'
+workDir <- 'intermediateData/Kock_HD/'
+KockMatrix <- readRDS(paste0(workDir,'IntensityMatrix.rds')) 
 col <- gsub('NKX2-','NKX2.',colnames(KockMatrix[,3:ncol(KockMatrix)]))
 col <- gsub('NKX3-','NKX3.',col)
-CV_alignment <- readRDS('HD_SELEX_PBM_CV_alignment.rsd')
-CV_motif <- readRDS('HD_SELEX_PBM_CV_motif.rsd')
+CV_alignment <- readRDS('intermediateData/HD/HD_SELEX_PBM_CV_alignment.rsd')
+CV_motif <- readRDS('intermediateData/HD/HD_SELEX_PBM_CV_motif.rsd')
 motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
 
 options(warn = -1)
@@ -1280,7 +1276,7 @@ CV_motif[[415]] <- list(name = 'HOXB6', matrix = CV_motif[[414]]$matrix)
 CV_motif[[416]] <- list(name = 'NKX2-6', matrix = CV_motif[[414]]$matrix)
 CV_motif[[417]] <- list(name = 'NKX2-4', matrix = CV_motif[[414]]$matrix)
 
-SampleInfo <- read_excel("KockHDPBM/41467_2024_47396_MOESM5_ESM.xls")
+SampleInfo <- read_excel(paste0(rawData, "41467_2024_47396_MOESM5_ESM.xls"))
 ExpIDs <- unique(unlist(lapply(strsplit(col,'_'), function(x) x[1])))
 mutationInfo <- data.frame(NULL)
 for(i in 1:length(ExpIDs)){
@@ -1634,7 +1630,7 @@ mononucleotide_logo(frequency2ddG(trueDiffMatrix), label = F)
 ```
 
 ```{r rCLAMPS}
-rCLAMPS_predicted_pwms <- read.delim("E:/Desktop/FamilyCode/KockHDPBM/rCLAMPS_predicted_pwms.txt")
+rCLAMPS_predicted_pwms <- read.delim(paste0(workDir, "rCLAMPS_predicted_pwms.txt"))
 motifPoses <- c('T3','D4','A5','Y6','N7','N8')
 rCLAMPSTFs <- mutationInfo$name[mutationInfo$mutation != 'WT']
 predMotifs <- list()
@@ -1679,7 +1675,7 @@ for(i in 1:length(trueMotifs)){
 ```{r deepPBS}
 motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8')
 
-deepPBSdir <- 'deepPBS/HDKock/results/'
+deepPBSdir <- 'rawData/deepPBS/HDKock/results/'
 deepPBSmotifFiles <- list.files(deepPBSdir, pattern = '.tsv')
 
 deepPBSTFs <- gsub('.tsv','',deepPBSmotifFiles)
