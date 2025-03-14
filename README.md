@@ -2,31 +2,31 @@
 Shaoxun Liu, Pilar Gomez-Alcala, Christ Leemans, William J. Glassford, Lucas A.N. Melo, Richard S. Mann, Harmen J. Bussemaker
 
 BioRxiv link: https://www.biorxiv.org/content/10.1101/2024.01.24.577115v1
-Link to the Bussemaker lab: https://bussemakerlab.org/site/
+Link to the Bussemaker lab: https://bussemakerlab.org
 
-## DOWNLOAD DATA
+## CISBP DATA DOWNLOAD
 
-rawData\HD\Zscores.txt and rawData\bHLH\Zscores.txt should be downloaded from https://cisbp.ccbr.utoronto.ca/bulk.php. Select bHLH/Homeodomain in selection field and select Z-score to download. The Zscore.txt files shall be unziped and placed to the corresponding rawData directories. 
+rawData/HD/Zscores.txt and rawData/bHLH/Zscores.txt should be downloaded from https://cisbp.ccbr.utoronto.ca/bulk.php (version 3.00). Choose "bHLH" or "Homeodomain" (one at a time) when selecting by family, check boxes "Z-score" and "TF info", and click "Download Family Archive" button to download. The two downloaded ZIP files need to be uncompressed and placed to the corresponding rawData directories.
 
-## FIGURE GENERATION
+## FIGURE GENERATION SCRIPT
 
-Running FamilyCodeFigures.Rmd alone will generate all figures using precomputed intermediate data. To generate intermediate data locally, run the data processing Rmds. 
+Running FamilyCodeFigures.Rmd will use the pre-computed files in folder "intermediateData" to generate all figures using precomputed intermediate data. To generate these intermediate data files from the raw data, run the data processing Rmds in the next section.
 
-## DATA PROCESSING
+## DATA PROCESSING SCRIPTS
 
-FamilyCodeOnSELEX_bHLH.Rmd: Data processing using SELEX-seq data as input to perform Family Code prediction. Generates supplimental data 1-4.
+FamilyCodeOnSELEX_bHLH.Rmd: Data processing using SELEX-seq data as input to perform FamilyCode prediction. Generates Supplemental Data S1-S4.
 
-FamilyCodeOnPBM_bHLH.Rmd: Data processing using PBM data as input to perform Family Code prediction.
+FamilyCodeOnPBM_bHLH.Rmd: Data processing using PBM data as input to perform FamilyCode prediction.
 
-FamilyCodeOnSELEX+PBM_bHLH.Rmd: Data processing using SELEX-seq and PBM data as input to perform Family Code prediction.
+FamilyCodeOnSELEX+PBM_bHLH.Rmd: Data processing using SELEX-seq and PBM data as input to perform FamilyCode prediction.
 
-FamilyCodeOnSELEX_HD.Rmd: Data processing using SELEX-seq data as input to perform Family Code prediction. 
+FamilyCodeOnSELEX_HD.Rmd: Data processing using SELEX-seq data as input to perform FamilyCode prediction. 
 
-FamilyCodeOnPBM_HD.Rmd: Data processing using PBM data as input to perform Family Code prediction.
+FamilyCodeOnPBM_HD.Rmd: Data processing using PBM data as input to perform FamilyCode prediction.
 
-FamilyCodeOnSELEX+PBM_HD.Rmd: Data processing using SELEX-seq and PBM data as input to perform Family Code prediction.
+FamilyCodeOnSELEX+PBM_HD.Rmd: Data processing using SELEX-seq and PBM data as input to perform FamilyCode prediction.
 
-## SUPPLEMENTAL DATA
+## SUPPLEMENTAL DATA FILES
 
 Supplemental Data S1: DNA recognition models for the 52 bHLH factors analyzed in this study.
 
