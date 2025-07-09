@@ -14,7 +14,7 @@ Running FamilyCodeFigures.Rmd will use the pre-computed files in folder "interme
 
 ## DATA PROCESSING SCRIPTS
 
-FamilyCodeOnSELEX_bHLH.Rmd: Data processing using SELEX-seq data as input to perform FamilyCode prediction. Generates Supplemental Data S1-S4.
+FamilyCodeOnSELEX_bHLH.Rmd: Data processing using SELEX-seq data as input to perform FamilyCode prediction. Generates Supplemental Data S2-S5.
 
 FamilyCodeOnPBM_bHLH.Rmd: Data processing using PBM data as input to perform FamilyCode prediction.
 
@@ -24,7 +24,7 @@ FamilyCodeOnSELEX_HD.Rmd: Data processing using SELEX-seq data as input to perfo
 
 FamilyCodeOnPBM_HD.Rmd: Data processing using PBM data as input to perform FamilyCode prediction.
 
-FamilyCodeOnSELEX+PBM_HD.Rmd: Data processing using SELEX-seq and PBM data as input to perform FamilyCode prediction.
+FamilyCodeOnSELEX+PBM_HD.Rmd: Data processing using SELEX-seq and PBM data as input to perform FamilyCode prediction. Generates Supplemental Data S6-S7.
 
 ## SUPPLEMENTAL DATA FILES
 
