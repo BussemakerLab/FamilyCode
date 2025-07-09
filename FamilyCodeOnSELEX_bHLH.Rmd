@@ -101,6 +101,8 @@ bHLH_motifs <- loadMono_motifs(bHLH_index, modelFile_Template, rec_seq = 'CANNTG
 #uniform variable name
 CV_motif <- bHLH_motifs
 CV_alignment <- matchAliMotif(CV_motif, bHLH_pbAlignment)
+saveRDS(CV_alignment, file = paste0('intermediateData/bHLH/bHLH_SELEX_CV_alignment.rsd'))
+saveRDS(CV_motif, file =  paste0('intermediateData/bHLH/bHLH_SELEX_CV_motif.rsd'))
 ```
 
 ### Make p-val table
@@ -148,6 +150,7 @@ for(pos in motifPoses){
 evaMatrix_BL <- evaMatrix
 
 ```
+
 
 
 ### leave-one-out test for all available samples
@@ -459,27 +462,27 @@ t.test(bootstrap[,2], bootstrap[,6], paired = T)$p.value
 
 ```
 
-# Supplemental data 1
+# Supplemental data S2
 ```{r SD1}
 library(R.utils)
-mkdirs('S1')
+mkdirs('S2')
 for(i in 1:nrow(bHLH_index)){
   result <- readLines(paste0(rawData,"HTdata/",
                                      bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
   mono <- JSON2Matrix(result, mode = bHLH_index$motif_model[i])
   plot <- mononucleotide_logo(mono)
   plot <- plot + ggplot2::ggtitle(paste0(gsub('_','',bHLH_index$gene_symbol[i]), '\nR^2: ', bHLH_index$quality[i]))
-  png(paste0('S1/',gsub('_','',bHLH_index$gene_symbol[i]),'.png'))
+  png(paste0('S2/',gsub('_','',bHLH_index$gene_symbol[i]),'.png'))
   plot(plot)
   dev.off()
 }
 
 ```
 
-# Supplemental data 2
+# Supplemental data S3
 ```{r SD2}
 library(plotly)
-mkdirs('S2')
+mkdirs('S3')
 pos_index <- c('P-3','P-2','P-1','P1','P2','P3')
 for(i in 1:6){
   for(j in c(5,13)){
@@ -489,14 +492,14 @@ for(i in 1:6){
     plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
     scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
     plot <- plot%>%layout(scene=scene)
-    htmlwidgets::saveWidget(as_widget(plot), paste0("S2/AA",j,"_",motifPosition,".html"))
+    htmlwidgets::saveWidget(as_widget(plot), paste0("S3/AA",j,"_",motifPosition,".html"))
   }
 }
 ```
 
-# Supplemental data 3
+# Supplemental data S4
 ```{r SD3}
-mkdirs('S3')
+mkdirs('S4')
 posMatrix <- gene2pos(CV_motif, pos = 'P-1')
 svd <- matrixSVD(posMatrix)
 #ANOVA test on the level of association between SVD Principal components and residue type
@@ -511,7 +514,7 @@ for(j in 1:56){
     dt$col <- AAcolor(dt$AA)
     dt <- arrange(dt,u)
     colScheme <- unique(dt[,c(1,3)])
-    png(paste0('S3/AA',pos,'_PC',u,'.png'))
+    png(paste0('S4/AA',pos,'_PC',u,'.png'))
     plot(x = dt$u, y = 1:52/52, col = dt$col, pch = 19, main = paste0('eCDF for PC',u,' at position ', pos), xlab = paste0('PC',u), ylab = 'Frequency', cex = 1, cex.lab = 1.2, cex.axis = 1.2)
     legend(x = "topleft", legend = colScheme$AA, col =colScheme$col, pch = 19, cex = 1, bty = 'n')
     legend(x = "bottomright", legend = paste0('-log(p-Value): ',round(svd.pval[pos,u],2)), bty = 'n')
@@ -521,10 +524,10 @@ for(j in 1:56){
 
 ```
 
-# Supplemental data 4
+# Supplemental data S5
 ```{r SD4}
 #1400/400
-mkdirs('S4')
+mkdirs('S5')
 pos_index <- c('P1','P2','P3')
 for(i in 1:3){
   posMatrix <- gene2pos(CV_motif, pos = pos_index[i])
@@ -532,7 +535,7 @@ for(i in 1:3){
   #ANOVA test on the level of association between SVD Principal components and residue type
   svd.pval <- svdANOVA(svd, CV_alignment)
   #Plot p-vals 
-  png(paste0('S4/PC_',i,'.png'), width = 1400, height = 400)
+  png(paste0('S5/PC_',i,'.png'), width = 1400, height = 400)
   plot(svd.pval$X1, pch = 1, col = "red", type = 'l', lwd = 3, xlab = 'AA Position', ylab = '-log p-val', ylim = c(0, (1.1*max(svd.pval[,1:3]))) ,main = paste0('Statistical significance of ANOVA test for PCs at DNA position -', i, '/+',i))
   lines(svd.pval$X2, pch = 1, col = "green", lwd = 3)
   lines(svd.pval$X3, pch = 1, col = "blue", lwd = 3)

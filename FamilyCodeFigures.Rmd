@@ -98,54 +98,53 @@ CV_alignment <- matchAliMotif(CV_motif, bHLH_pbAlignment)
 ```
 
 # Figure 1
-```{r Figure 1}
-library(readr)
-library(R.utils)
 
-mkdirs('Figure1')
-for(i in 1:nrow(bHLH_index)){
-  JSON_Lines <- readLines(paste0(rawData,"HTdata/", bHLH_index$gene_symbol[i], '_', bHLH_index$study[i],'/result/fit.models.consensus.json'))
-  mono <- JSON2Matrix(JSON_Lines, mode = bHLH_index$motif_model[i])
-  plot <- mononucleotide_logo(mono, axes = F)
-  png(paste0('Figure1/',bHLH_index$gene_symbol[i],'.png'))
-  plot(plot)
-  dev.off()
-}
-```
-
-# Figure 2
-
-```{r 2A}
+```{r 1A}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-1'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+AAsele <- colnames(AAbp_Matrix) %in% c("R", "L", "V", "M")
+AAbp_Matrix <- AAbp_Matrix[,AAsele]
+
+plot <- plot_tetrahedron_new(AAbp_Matrix, color = T, vertex = F, size = 10, size_vector = rep(10,ncol(AAbp_Matrix)))
 scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
 plot%>%layout(scene=scene)
+
+plot_tetrahedron_legend(unique(colnames(AAbp_Matrix)), AAcolor(unique(colnames(AAbp_Matrix))), rep('circle',length(unique(colnames(AAbp_Matrix)))))
 ```
 
-```{r 2B}
+```{r 1B}
 library(plotly)
 AAPosition <- 5
 motifPosition <- 'P-1'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+AAsele <- colnames(AAbp_Matrix) %in% c("H", "K", "A", "R")
+AAbp_Matrix <- AAbp_Matrix[,AAsele]
+
+plot <- plot_tetrahedron_new(AAbp_Matrix, color = T, vertex = F, size = 10, size_vector = rep(10,ncol(AAbp_Matrix)))
 scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
 plot%>%layout(scene=scene)
+
+plot_tetrahedron_legend(unique(colnames(AAbp_Matrix)), AAcolor(unique(colnames(AAbp_Matrix))), rep('circle',length(unique(colnames(AAbp_Matrix)))))
 ```
 
-```{r 2C}
+```{r 1C}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-3'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot <- plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
+AAsele <- colnames(AAbp_Matrix) %in% c("R", "L", "V", "M")
+AAbp_Matrix <- AAbp_Matrix[,AAsele]
+
+plot <- plot_tetrahedron_new(AAbp_Matrix, color = T, vertex = F, size = 10, size_vector = rep(10,ncol(AAbp_Matrix)))
 scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
 plot%>%layout(scene=scene)
+
+plot_tetrahedron_legend(unique(colnames(AAbp_Matrix)), AAcolor(unique(colnames(AAbp_Matrix))), rep('circle',length(unique(colnames(AAbp_Matrix)))))
 ```
 
-```{r 2D, S7A}
+```{r 1D, S8A}
 #genreate p-val tablle
 pvalTable <- getPvalTable(CV_motif, Alignment = CV_alignment, pos_index = motifPoses)
 #apply -log(10)
@@ -157,9 +156,208 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
                   Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
 ```
 
-
 # Figure S1
 ```{r S1}
+#equal space in tetrahedron
+G_vertex       <- c(-1,  1, -1)
+centroid_Others <- c( 1/3, -1/3,  1/3)
+
+# 2) Make a length‐10 vector of t‐values from 0 to 1:
+t_vals <- seq(0, 1, length.out = 10)
+
+# 3) For each t, compute the point on the segment:
+segment_points <- t(sapply(t_vals, function(t) {
+  G_vertex + t * (centroid_Others - G_vertex)
+}))
+
+demo <- tetrahedron2matrix(segment_points)
+demo <- demo[,2:9]
+
+pointName <- 1:8
+
+#equal space in logo
+colnames(demo) <- pointName
+rownames(demo) <- DNA()
+demo <- frequency2ddG(demo)
+demo <- ddG2frequency(demo)
+
+#equal space in logo
+energy <- (0:8/(6/(log(0.01))))
+demo <- matrix(ncol = 9, nrow = 4, data = log(0.01))
+demo[3,] <- energy
+pointName <- 1:9
+colnames(demo) <- pointName
+rownames(demo) <- DNA()
+
+# Define the two endpoint colors
+start_color <- "blue"
+end_color <- "red"
+
+# Create a palette function
+palette_func <- colorRampPalette(c(start_color, end_color))
+
+# Generate 9 interpolated colors
+colors <- palette_func(9)
+
+plotTetrahedron <- plot_tetrahedron_new(ddG2frequency(demo), color_vector = colors, vertex = F, size = 10, label = T, size_vector = rep(10, 9))
+
+scene = list(camera = list(eye = list(x = -1.4, y = -1.4, z = -1.6)))
+
+plotTetrahedron%>%layout(scene=scene)
+mononucleotide_logo(demo)
+
+
+#plot out-of-tetrahedron illustration
+demo2 <- ddG2frequency(demo)[,7:9]
+demo2[,1] <- c(1,1,1,1)
+demo2[,2] <- c(0.4,1,0.2,0.01)
+demo2[,3] <- c(0.4,1,0.2,-0.4)
+
+connect <- demo2[,2:3]
+connect[,1] <- c(0, 0, 0, 1)
+connect <- connect[,c(2,1)]
+connect <- t(matrix2tetrahedron(connect))
+
+connect2 <- connect
+connect2[,2] <- c(0,0,0)
+connect3 <- demo2[,2:3]
+connect3[,2] <- c(0, 0, 0, 1)
+connect3 <- t(matrix2tetrahedron(connect3))
+connect3[,2] <- c(0,0,0)
+
+plotTest <- plot_tetrahedron_new(demo2, color_vector = c('black',colors[c(1,9)]), vertex = F, size = 10, size_vector = rep(15, 3))
+plotTest%>%
+  add_trace(connect,x = as.numeric(connect[1,1:2]),
+            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('grey'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  #)
+  #%>%
+  #add_trace(
+  #  type= "cone",
+  #  x= connect[1,1], y= connect[2,1], z= connect[3,1],
+  #  u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
+  #  sizeref= 0.1,
+  #  colorscale = list(list(0, as.character('black')),
+  #                    list(1, as.character('black'))),
+  #  anchor = 'tip',
+  #  showscale= F
+  #)
+  )%>%
+  add_trace(connect2,x = as.numeric(connect2[1,1:2]),
+            y=as.numeric(connect2[2,1:2]),z= as.numeric(connect2[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect2[1,1], y= connect2[2,1], z= connect2[3,1],
+    u= connect2[1,1] - connect2[1,2], v= connect2[2,1] - connect2[2,2], w= connect2[3,1] - connect2[3,2],
+    sizeref= 0.1,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%
+  add_trace(connect3,x = as.numeric(connect3[1,1:2]),
+            y=as.numeric(connect3[2,1:2]),z= as.numeric(connect3[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect3[1,1], y= connect3[2,1], z= connect3[3,1],
+    u= connect3[1,1] - connect3[1,2], v= connect3[2,1] - connect3[2,2], w= connect3[3,1] - connect3[3,2],
+    sizeref= 0.1,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%layout(scene=scene)
+
+```
+
+#Figure S2
+```{r S2}
+AAbp_Matrix1 <- data.frame(Y = c(0.6,0.6,0.6,1))
+AAbp_Matrix2 <- data.frame(H = c(0.4,0.4,1,0.4))
+scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
+
+#300/500
+rownames(AAbp_Matrix1) <- DNA()
+rownames(AAbp_Matrix2) <- DNA()
+mononucleotide_logo(frequency2ddG(AAbp_Matrix1))
+mononucleotide_logo(frequency2ddG(AAbp_Matrix2))
+
+dddGdemo <- get.dddG(AAbp_Matrix2, AAbp_Matrix1)
+
+mononucleotide_logo(dddGdemo)
+
+Tetra1 <- matrix2tetrahedron(AAbp_Matrix1)
+Tetra2 <- matrix2tetrahedron(AAbp_Matrix2)
+Tetra3 <- matrix2tetrahedron(ddG2frequency(dddGdemo))
+origin <- Tetra3
+origin[1:3] <- 0
+connect <- t(rbind.data.frame(Tetra2,Tetra1))
+connect2 <- t(rbind.data.frame(Tetra3,origin))
+
+
+plotTest <- plot_tetrahedron_new(cbind(AAbp_Matrix1,AAbp_Matrix2), vertex = F, size = 10, size_vector = rep(15, 2))
+plotTest%>%
+  add_trace(connect,x = as.numeric(connect[1,1:2]),
+            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect[1,1], y= connect[2,1], z= connect[3,1],
+    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
+    sizeref= 0.15,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%layout(scene=scene)
+
+
+plotTest <- plot_tetrahedron_new(cbind(ddG2frequency(dddGdemo),data.frame(O = c(1,1,1,1))), color_vector = c(AAcolor('H'), 'black'),vertex = F, size = 10, size_vector = rep(15, 2))
+plotTest%>%
+  add_trace(connect2,x = as.numeric(connect2[1,1:2]),
+            y=as.numeric(connect2[2,1:2]),z= as.numeric(connect2[3,1:2]),color = I('black'),
+            type = 'scatter3d',
+            mode = 'lines',
+            line = list(width = 5),
+            opacity = 1,
+            showlegend = F
+  )%>%
+  add_trace(
+    type= "cone",
+    x= connect2[1,1], y= connect2[2,1], z= connect2[3,1],
+    u= connect2[1,1] - connect2[1,2], v= connect2[2,1] - connect2[2,2], w= connect2[3,1] - connect2[3,2],
+    sizeref= 0.15,
+    colorscale = list(list(0, as.character('black')),
+                      list(1, as.character('black'))),
+    anchor = 'tip',
+    showscale= F
+  )%>%layout(scene=scene)
+
+```
+
+# Figure S3
+```{r S3}
 colorCode <- pvalTable$`P-1`
 colorCode[is.na(colorCode)] <- median(colorCode[!is.na(colorCode)])
 max <- max(colorCode)
@@ -180,8 +378,8 @@ for(i in 1:length(colorList)){
 
 ```
 
-# Figure S2
-```{r S2B}
+# Figure S4
+```{r S4B}
 AAPosition <- 20
 motifPosition <- 'P-1'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
@@ -191,7 +389,7 @@ plot%>%layout(scene=scene)
 
 ```
 
-```{r S2D}
+```{r S4D}
 posMatrix <- gene2pos(CV_motif, pos = 'P-1')
 P22 <- substr(CV_alignment$alignment,22, 22)
 P50 <- substr(CV_alignment$alignment,50, 50)
@@ -220,8 +418,8 @@ plot%>%layout(scene=scene)
 #legend(x = "topleft", legend = c('H-bond','Electro-static', 'Hydrophobic', 'Repel'), col = AAcolor(c('Q', 'E', 'L', 'W')), pch = 19, cex = 1, bty = 'n')
 ```
 
-# Figure 3
-```{r 3A}
+# Figure 2
+```{r 2A}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-1'
@@ -263,7 +461,7 @@ mononucleotide_logo(Rmean)
 
 ```
 
-```{r 3B}
+```{r 2B}
 library(plotly)
 AAPosition <- 13
 motifPosition <- 'P-1'
@@ -305,7 +503,7 @@ mononucleotide_logo(log(Rmean))
 
 ```
 
-```{r 3C}
+```{r 2C}
 AAPosition <- 13
 motifPosition <- 'P-1'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
@@ -396,8 +594,8 @@ scene = list(camera = list(eye = list(x = 0, y = 0, z = -2)))
 plotTest%>%layout(scene=scene)
 ```
 
-#Figure S3
-```{r 3D, S3B}
+#Figure S5
+```{r 2D, S5B}
 #make predictions
 FCpredTrueList <- list()
 pos <- 'P-1'
@@ -414,20 +612,8 @@ attr(predTrue, 'confidence') <- attr(predTrue, 'confidence')[attr(predTrue, 'con
 plotPredTrue(predTrue, main = paste0('FamilyCode at ',pos))
 
 ```
-# Figure S4
-```{r S4A}
-#plot confidance
-plot(attr(predTrue, 'confidence'),groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F), ylab = 'Predict-True R^2', xlab = 'Confidence score', main = paste0('Confidence at ', pos))
-legend('bottomright', paste0('R^2 = ', round(groupedR2(groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F),
-                                                   attr(predTrue, 'confidence'), ),4)), bty = 'n')
-dt <- data.frame(conf = attr(predTrue, 'confidence'), R2 = groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F))
-lm <- lm(R2~conf, data= dt)
-abline(lm, col= 'red')
-#plot frequency
 
-```
-
-```{r S3A}
+```{r S5A}
 pos <- 'P-1'
 
 BaseLines.ddG <- getBaseLineAccuracy(all_mono_motifs, pos = pos, randomSample = F)
@@ -437,7 +623,7 @@ plotPredTrue(BaseLines.ddG, xlab = 'Experiment 1 -ΔΔG/RT', ylab = 'Experiment 
 
 ```
 
-```{r S3C}
+```{r S5C}
 pos <- 'P-1'
 
 predTrue <- closestSeqPred(CV_motif,CV_alignment, pos = pos)
@@ -446,7 +632,7 @@ predTrue <- predTrue[!is.na(predTrue$pred),]
 plotPredTrue(predTrue, main = paste0('Closest-paralog prediction at ',pos))
 ```
 
-```{r S3D}
+```{r S5D}
 pos <- 'P-1'
 
 mod_alignment <- CV_alignment
@@ -458,7 +644,155 @@ plotPredTrue(predTrue, main = paste0('Similarity regression at ',pos))
 
 ```
 
-#Figure 4
+# Figure S6
+```{r S6}
+CV_motif <- readRDS('intermediateData/bHLH/bHLH_SELEX_CV_motif.rsd')
+CV_alignment <- readRDS('intermediateData/bHLH/bHLH_SELEX_CV_alignment.rsd')
+motifPoses <- c('P-3','P-2','P-1') 
+library(Biostrings)
+
+# Convert to DNAStringSet
+aa_set <- AAStringSet(CV_alignment$alignment)
+
+# Compute pairwise Hamming distances
+dist_matrix <- stringDist(aa_set, method = "hamming")
+dist.matrix <- as.matrix(dist_matrix)
+step <- floor(min(apply(dist.matrix,2,max))/5)-1
+
+
+# predicting for each distance treshold with FC
+
+FCR2 <- data.frame(NULL)
+for(t in 0:step){
+  R2ClusterFC <- data.frame(NULL)
+  all_pred_motifs <- list()
+  for(i in 1:nrow(dist.matrix)){
+    train_motifs <- CV_motif[dist.matrix[i,] > 5*t]
+    train_alignment <- CV_alignment[dist.matrix[i,] > 5*t,]
+    if(length(train_motifs) < 1){
+      next()
+    }
+    test_motifs <- CV_motif[i]
+    test_alignment <- CV_alignment[i,]
+    svdModel <- makeSVDModel(train_motifs, train_alignment, Positions = motifPoses)
+    #predict mutant
+    pred_motifs <- list()
+    for(j in 1:length(test_motifs)){
+      pred_matrix <- SVDmodelPredPSAM(svdModel,test_alignment$alignment[j])
+      pred_motifs[[length(pred_motifs)+1]] <- list(name = test_alignment$name[j], matrix = pred_matrix)
+    }
+    all_pred_motifs[length(all_pred_motifs)+1] <- pred_motifs[1]
+  }
+  R2s <- c()
+  for(pos in motifPoses){
+    predMatrix <- frequency2ddG(gene2pos(all_pred_motifs, pos))
+    testMatrix <- frequency2ddG(gene2pos(CV_motif, pos))
+    predTrue <- data.frame(true = as.numeric(testMatrix), pred = as.numeric(predMatrix))
+    #plotPredTrue(predTrue, main = paste0('FamilyCode prediction for cluster ',i,' at pos ', pos), xlab = 'Experimental -ΔΔG/RT', ylab = 'Predicted -ΔΔG/RT')
+    R2s <- c(R2s, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  }
+  R2ClusterFC <- rbind.data.frame(R2ClusterFC, R2s)
+  
+  colnames(R2ClusterFC) <- motifPoses
+  meanR2 <- apply(R2ClusterFC, 2, mean)
+  FCR2 <- rbind.data.frame(FCR2, meanR2)
+}
+colnames(FCR2) <- motifPoses
+
+
+# predicting for each distance treshold with CS
+
+CSR2 <- data.frame(NULL)
+for(t in 0:step){
+  R2Cluster <- data.frame(NULL)
+  all_pred_motifs <- list()
+  for(i in 1:nrow(dist.matrix)){
+    train_motifs <- CV_motif[dist.matrix[i,] > 5*t]
+    train_alignment <- CV_alignment[dist.matrix[i,] > 5*t,]
+    if(length(train_motifs) < 1){
+      next()
+    }
+    test_motifs <- CV_motif[i]
+    test_alignment <- CV_alignment[i,]
+    #predict mutant
+    pred_motifs <- list()
+    pred_motifs <- CSpredPSAM(test_alignment, train_motifs, train_alignment)
+    all_pred_motifs[length(all_pred_motifs)+1] <- pred_motifs[1]
+  }
+  R2s <- c()
+  for(pos in motifPoses){
+    predMatrix <- frequency2ddG(gene2pos(all_pred_motifs, pos))
+    testMatrix <- frequency2ddG(gene2pos(CV_motif, pos))
+    predTrue <- data.frame(true = as.numeric(testMatrix), pred = as.numeric(predMatrix))
+    #plotPredTrue(predTrue, main = paste0('FamilyCode prediction for cluster ',i,' at pos ', pos), xlab = 'Experimental -ΔΔG/RT', ylab = 'Predicted -ΔΔG/RT')
+    R2s <- c(R2s, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  }
+  R2Cluster <- rbind.data.frame(R2Cluster, R2s)
+  
+  colnames(R2Cluster) <- motifPoses
+  meanR2 <- apply(R2Cluster, 2, mean)
+  CSR2 <- rbind.data.frame(CSR2, meanR2)
+}
+colnames(CSR2) <- motifPoses
+
+
+# predicting for each distance treshold with SR
+
+SRR2 <- data.frame(NULL)
+isbHLH <- sum('P-1' == motifPoses) + sum('P1' == motifPoses) > 0
+if(isbHLH){
+  mod_alignment <- CV_alignment
+  mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
+  wf <- 'rawData/bHLH/SimilarityRegression/F082_1.97d.json'
+}else{
+  mod_alignment <- CV_alignment
+  wf <- 'rawData/HD/SimilarityRegression/F223_1.97d.json'
+}
+for(t in 0:step){
+  R2Cluster <- data.frame(NULL)
+  all_pred_motifs <- list()
+  for(i in 1:nrow(dist.matrix)){
+    train_motifs <- CV_motif[dist.matrix[i,] > 5*t]
+    train_alignment <- mod_alignment[dist.matrix[i,] > 5*t,]
+    if(length(train_motifs) < 1){
+      next()
+    }
+    test_motifs <- CV_motif[i]
+    test_alignment <- mod_alignment[i,]
+    #predict mutant
+    pred_motifs <- list()
+    pred_motifs <- suppressWarnings(SRpredPSAM(test_alignment, train_motifs, train_alignment, weightfile = wf))
+    all_pred_motifs[length(all_pred_motifs)+1] <- pred_motifs[1]
+  }
+  R2s <- c()
+  for(pos in motifPoses){
+    predMatrix <- frequency2ddG(gene2pos(all_pred_motifs, pos))
+    testMatrix <- frequency2ddG(gene2pos(CV_motif, pos))
+    predTrue <- data.frame(true = as.numeric(testMatrix), pred = as.numeric(predMatrix))
+    #plotPredTrue(predTrue, main = paste0('FamilyCode prediction for cluster ',i,' at pos ', pos), xlab = 'Experimental -ΔΔG/RT', ylab = 'Predicted -ΔΔG/RT')
+    R2s <- c(R2s, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  }
+  R2Cluster <- rbind.data.frame(R2Cluster, R2s)
+  
+  colnames(R2Cluster) <- motifPoses
+  meanR2 <- apply(R2Cluster, 2, mean)
+  SRR2 <- rbind.data.frame(SRR2, meanR2)
+}
+colnames(SRR2) <- motifPoses
+
+bHLHR2s <- list(FCR2, CSR2, SRR2)
+#saveRDS(bHLHR2s, 'bHLH_threshold_R2s.rds')
+
+pos <- 'P-1'
+step = 7
+plot(0:step*5,bHLHR2s[[1]][,pos],  type = 'l', ylim = c(min(min(bHLHR2s[[1]]), min(bHLHR2s[[2]], min(bHLHR2s[[3]]))),max(max(bHLHR2s[[1]]), max(bHLHR2s[[2]], max(bHLHR2s[[3]])))), col = '#ff7f0e', ylab = 'mean R-square', xlab = 'hamming distance cutoff', main = paste0('predictions for bHLH motif position ',pos) , lwd = 3)
+lines(0:step*5,bHLHR2s[[2]][,pos], col = 'skyblue3', lwd = 3)
+lines(0:step*5,bHLHR2s[[3]][,pos], col = 'blue3', lwd = 3)
+legend("topright", legend = c("FamilyCode", "Closest-paralog", "Similarity Regression"),
+       col = c('#ff7f0e', 'skyblue3', 'blue3'), lty = 1, cex = 0.8, bty = 'n', lwd = 3)
+```
+
+#Figure 3
 ```{r}
 groups <- c('HWT', 'H5', 'H13','HD', 'AWT', 'A5', 'A13', 'AD')
 SELEXFile_Template <- paste0(rawData, 'SELEXdata/$modelFile$/fit.models.consensus.json')
@@ -466,7 +800,7 @@ SELEX_info <- data.frame(gene_symbol = groups, study = 'pb')
 SELEX_motifs <- loadMono_motifs(SELEX_info, SELEXFile_Template, rec_seq = 'CANNTG', pos_index = c('P-3','P-2','P-1','P1','P2','P3'), checkSymmetry = T, withTable = F, useMode = c(1,2,1,1,1,1,1,1))
 ```
 
-```{r 4B}
+```{r 3B}
 result <- readLines(paste0(rawData, "HTdata/HES2_Yin2017/result/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
@@ -475,7 +809,7 @@ mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
 ```
 
-```{r 4C}
+```{r 3C}
 result <- readLines(paste0(rawData, "SELEXdata/HWT_pb/fit.models.consensus.json"))
 mono <- JSON2Matrix(result, mode = 1)
 mononucleotide_logo(frequency2ddG(mono))
@@ -489,7 +823,7 @@ plotPredTrue(test,  xlab = 'HT-SELEX -ΔΔG/RT', ylab = 'Experimental -ΔΔG/RT'
 ```
 
 
-```{r 4E}
+```{r 3E}
 library(readxl)
 library(ggplot2)
 library(ggsignif)
@@ -537,7 +871,7 @@ plot(p)
 ```
 
 
-```{r 4FG}
+```{r 3FG}
 svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
 svdModelpreTrain <- trainSVD.Iterative(svd, CV_alignment, Ftest_pVal = 0.001)
 keyPos <- svdModelpreTrain$keyPos
@@ -582,49 +916,7 @@ predTrueAscl2 <- data.frame(pred = as.numeric(unlist(pred[,4:6])), true = as.num
 plotPredTrue(predTrueAscl2,  xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT', main = paste0('FamilyCode on ASCL2 mutants'))
 ```
 
-#Figure S5
-```{r S5}
-library(plotly)
-AAbp_Matrix1 <- data.frame(Y = c(0.2,0.2,0.2,1))
-AAbp_Matrix2 <- data.frame(H = c(0.1,0.1,1,0.1))
-scene = list(camera = list(eye = list(x = 1.25, y = 1.25, z = 1.25)))
 
-#300/500
-rownames(AAbp_Matrix1) <- DNA()
-rownames(AAbp_Matrix2) <- DNA()
-mononucleotide_logo(frequency2ddG(AAbp_Matrix1))
-mononucleotide_logo(frequency2ddG(AAbp_Matrix2))
-
-mononucleotide_logo(get.dddG(AAbp_Matrix2, AAbp_Matrix1))
-
-Tetra1 <- matrix2tetrahedron(AAbp_Matrix1)
-Tetra2 <- matrix2tetrahedron(AAbp_Matrix2)
-connect <- t(rbind.data.frame(Tetra2,Tetra1))
-
-
-plotTest <- plot_tetrahedron(cbind(AAbp_Matrix1,AAbp_Matrix2), color = T, size = 20)
-plotTest%>%
-  add_trace(connect,x = as.numeric(connect[1,1:2]),
-            y=as.numeric(connect[2,1:2]),z= as.numeric(connect[3,1:2]),color = I('black'),
-            type = 'scatter3d',
-            mode = 'lines',
-            line = list(width = 5),
-            opacity = 1,
-            showlegend = F
-  )%>%
-  add_trace(
-    type= "cone",
-    x= connect[1,1], y= connect[2,1], z= connect[3,1],
-    u= connect[1,1] - connect[1,2], v= connect[2,1] - connect[2,2], w= connect[3,1] - connect[3,2],
-    sizeref= 0.1,
-    colorscale = list(list(0, as.character('black')),
-                      list(1, as.character('black'))),
-    anchor = 'tip',
-    showscale= F
-  )%>%layout(scene=scene)
-
-
-```
 
 # Load bHLH PBM data
 ```{r}
@@ -790,8 +1082,8 @@ motifTable_baseline <- motifs_arranged[motifs_arranged$score <= 1,]
 length(unique(motifTable_baseline$gene_symbol))
 ```
 
-# Figure S6
-```{r S6A}
+# Figure S7
+```{r S7A}
 motifPoses <- c('P-3','P-2','P-1','P1','P2','P3')
 cisBP_motifs_baseline <- filterMotifList(motifTable_baseline, cisBP_motifs, 6, motifPoses)
 cisBP_alignment <- cisBP_alignment[match(motifTable_baseline$gene_symbol, cisBP_alignment$name),]
@@ -806,8 +1098,8 @@ plotPredTrue(BaseLines.ddG, xlab = 'Experiment 1 -ΔΔG/RT', ylab = 'Experiment 
 
 ```
 
-# Figure S7
-```{r S7B}
+# Figure S8
+```{r S8B}
 del <- which(duplicated(cisBP_alignment$alignment))
 CV_alignment <- cisBP_alignment[-del,]
 CV_motif <- cisBP_motifs_baseline[-del]
@@ -821,25 +1113,20 @@ pvalTable[is.na(pvalTable)] <- 0
 #pvalTable[pvalTable > -log(0.001/53/3,10)] <- 10
 gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
                   Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+
+meanMotif <- matrix(nrow = 4, ncol = 6, data = apply(sapply(CV_motif, function(x) frequency2ddG(x$matrix)),1,mean))
+rownames(meanMotif) <- DNA()
+mononucleotide_logo(meanMotif, axes = F)
 ```
 
-```{r S6B}
+```{r S7B}
 pos <- 'P-1'
 predTrue <- SVDregression.Iterative.CV(CV_motif,CV_alignment, pos = pos,Ftest_pVal = 0.001, useSimilarAA = T)
 predTrue <- predTrue[!is.na(predTrue$pred),]
 plotPredTrue(predTrue, main = paste0('FamilyCode at ', pos))
 ```
 
-```{r S4B}
-plot(attr(predTrue, 'confidence'),groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F), ylab = 'Predict-True R^2', xlab = 'Confidence score', main = paste0('Confidence at ', pos))
-legend('bottomright', paste0('R^2 = ', round(groupedR2(groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F),
-                                                   attr(predTrue, 'confidence'), ),4)), bty = 'n')
-dt <- data.frame(conf = attr(predTrue, 'confidence'), R2 = groupedR2(predTrue$pred, predTrue$true,member = 4, mean = F))
-lm <- lm(R2~conf, data= dt)
-abline(lm, col= 'red')
-```
-
-```{r S6C}
+```{r S7C}
 predTrue <- closestSeqPred(CV_motif,CV_alignment, pos = pos)
 #delete unsuccessful predictions
 predTrue <- predTrue[!is.na(predTrue$pred),]
@@ -848,7 +1135,7 @@ plotPredTrue(predTrue, main = paste0('Closest-paralog prediction at ',pos))
   
 ```
 
-```{r S6D}
+```{r S7D}
 mod_alignment <- CV_alignment
 mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
 predTrue <- SRpred(CV_motif,mod_alignment, pos = pos, weightfile = paste0(rawData, 'SimilarityRegression/F082_1.97d.json'))
@@ -860,7 +1147,7 @@ plotPredTrue(predTrue, main = paste0('Similarity regression at ',pos))
 
 ```
 
-# Figure S8
+# Figure 4
 ```{r}
 DeMasiInfo <- data.frame(name = TFdemasi$DBID.1, seq = 'RRKAATMRERRRRRKVNEAFEVVKQRTC-PNPNQRLPKVEILRSAIDYINNLE', motif = TFdemasi$Motif_ID)
 substr(DeMasiInfo$seq,13,13) <- c('R','T','V','L')
@@ -880,16 +1167,14 @@ for(i in 1:nrow(idstds)){
 DeMasi_motifs <- filterMotifList(Demasi_motifsDT, DeMasi_motifs, 6, motifPoses)
 ```
 
-```{r S8B}
+```{r 4B}
 for(i in 1:4){
   plot <- mononucleotide_logo(frequency2ddG(DeMasi_motifs[[i]]$matrix))
   plot <- plot + ggplot2::ggtitle(paste0(DeMasiInfo$name[i],'_true'))
   plot(plot)
 }
-```
 
-create FamilyCode model
-```{r}
+# create FamilyCode model
 demasi_alignment <- rbind.data.frame(CV_alignment, as.character(DeMasiInfo[4,c(1:2)]))
 demasi_motif <- CV_motif
 demasi_motif[[84]] <- DeMasi_motifs[[4]]
@@ -897,9 +1182,8 @@ svdModeldemasi <- makeSVDModel(CV_motif, CV_alignment, Positions = c('P-3','P-2'
 
 ```
 
-predict ΔΔΔG using tetrahedron distance
-
-```{r S8C}
+```{r 4C}
+# predict ΔΔΔG using tetrahedron distance
 svd <- matrixSVD(gene2pos(CV_motif, pos = 'P-1'))
 svdModel <- trainSVD(svd, CV_alignment, no.keyPos = c(1,1,1), keyPos = list(c(13), c(13), c(13)))
 #Predict binding motifs for test set
@@ -926,7 +1210,8 @@ predTrue <- data.frame(pred = as.numeric(unlist(pred[,1:3])), true = as.numeric(
 plotPredTrue(predTrue, main = 'FamilyCode prediction for HLH-1 mutants', xlab = 'DeMasi et. al., -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
 
 ```
-```{r S8D}
+
+```{r 4D}
 HLH1WT <- read.delim("rawData/deepPBS/HLH1/HLH1WT.tsv", header=FALSE)
 HLH1L13V <- read.delim("rawData/deepPBS/HLH1/HLH1L13V.tsv", header=FALSE)
 HLH1L13R <- read.delim("rawData/deepPBS/HLH1/HLH1L13R.tsv", header=FALSE)
@@ -1042,7 +1327,7 @@ HD_motifs_baseline <- filterMotifList(HDfiltered_table_baseline, HD_all_motifs, 
 
 ```
 
-```{r S4C}
+```{r S8C}
 #genreate p-val tablle
 pvalTable <- getPvalTable(HD_motif_SELEX, Alignment = HD_alignment_SELEX, pos_index = motifPositions)
 #apply -log(10)
@@ -1184,7 +1469,7 @@ HD_alignment_PBM <- cisBP_alignment[-del,]
 HD_motif_PBM <- cisBP_motifs_baseline[-del]
 ```
 
-```{r S4D}
+```{r S8D}
 #genreate p-val tablle
 pvalTable <- getPvalTable(HD_motif_PBM, Alignment = HD_alignment_PBM, pos_index = motifPositions)
 #apply -log(10)
@@ -1197,9 +1482,8 @@ gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendro
 
 ```
 
-
-# Concatnate SELEX and PBM
 ```{r}
+# Concatnate SELEX and PBM
 intersect <- intersect(HD_alignment_PBM$alignment, HD_alignment_SELEX$alignment)
 PBM_int <- match(intersect, HD_alignment_PBM$alignment)
 SELEX_int <- match(intersect, HD_alignment_SELEX$alignment)
@@ -1224,28 +1508,26 @@ pvalTable[is.na(pvalTable)] <- 0
 #plot heatmap
 gplots::heatmap.2(as.matrix(as.data.frame(lapply(pvalTable, as.numeric))),dendrogram='none',
                   Rowv=FALSE, Colv=FALSE,trace='none',col = rev(heat.colors(12)), key.title = '-logP-val')
+
+meanMotif <- matrix(nrow = 4, ncol = 8, data = apply(sapply(CV_motif, function(x) frequency2ddG(x$matrix)),1,mean))
+rownames(meanMotif) <- DNA()
+mononucleotide_logo(meanMotif, axes = F)
 ```
 
 ```{r 5B}
 AAPosition <- 5
 motifPosition <- 'D4'
 AAbp_Matrix <- AAbpCombination(CV_motif, CV_alignment, AAPosition, motifPosition)
-plot_tetrahedron(AAbp_Matrix, color = T, vertex = F, size = 10)
-```
+AAsele <- colnames(AAbp_Matrix) %in% c("T", "L", "V", "I")
+AAbp_Matrix <- AAbp_Matrix[,AAsele]
+
+plot <- plot_tetrahedron_new(AAbp_Matrix, color = T, vertex = F, size = 10, size_vector = rep(10,ncol(AAbp_Matrix)))
+scene = list(camera = list(eye = lapply(getVertex('C'), function(x) x*1.25), up = getVertex('G')))
+plot%>%layout(scene=scene)
+
+plot_tetrahedron_legend(unique(colnames(AAbp_Matrix)), AAcolor(unique(colnames(AAbp_Matrix))), rep('circle',length(unique(colnames(AAbp_Matrix)))))
 
 
-# Figure S9
-```{r S9}
-library(R.utils)
-mkdirs('FigureS9')
-for(i in 1:length(CV_motif)){
-  mono <- CV_motif[[i]]$matrix
-  plot <- mononucleotide_logo(frequency2ddG(mono), axes = F, labels = F)
-  png(paste0('FigureS9/',CV_alignment$name[i],'_',substr(CV_alignment$alignment[i], 5,15), '-',substr(CV_alignment$alignment[i], 44,54),'.png'),
-       width = 600, height = 200,)
-  plot(plot)
-  dev.off()
-}
 ```
 
 # Load Kock et al. data
@@ -1417,10 +1699,12 @@ for(i in mutantID){
 dddGTrue <- list()
 dddGpred <- list()
 R2ListbaseLine <- c()
+varListBaseLine <- c()
 for(i in 1:length(trueMotifs)){
   mutid <- mutantID[i]
   if(is.null(Exp2TrueMotifs[[mutid]]$matrix)){
     R2ListbaseLine <- c(R2ListbaseLine, 0)
+    varListBaseLine <- c(varListBaseLine, 0)
     dddGTrue[[length(dddGTrue) + 1]] <- NULL
     dddGpred[[length(dddGpred) + 1]] <- NULL
     next
@@ -1429,6 +1713,7 @@ for(i in 1:length(trueMotifs)){
   #predDiffTetra <- matrix2tetrahedron(Exp2TrueMotifs[[mutid]]$matrix) - matrix2tetrahedron(Exp2TrueMotifs[[max(WTID[WTID<mutid])]]$matrix)
   if(sum(predDiffTetra) == 0){
     R2ListbaseLine <- c(R2ListbaseLine, 0)
+    varListBaseLine <- c(varListBaseLine, 0)
     dddGTrue[[length(dddGTrue) + 1]] <- NULL
     dddGpred[[length(dddGpred) + 1]] <- NULL
     next
@@ -1446,7 +1731,8 @@ for(i in 1:length(trueMotifs)){
   predTrue <- data.frame(true = true, pred = pred)
   dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
   dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
-  R2ListbaseLine <- c(R2ListbaseLine, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  R2ListbaseLine <- c(R2ListbaseLine, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue), throughZero = T))
+  varListBaseLine <- c(varListBaseLine, mean(c(apply(frequency2ddG(trueDiffMatrix),2,function(x) max(abs(x))), apply(frequency2ddG(predDiffMatrix),2,function(x) max(abs(x)))))) #var(c(predTrue$true, predTrue$pred)) max(abs(c(predTrue$true, predTrue$pred) ))
 }
 ```
 
@@ -1493,6 +1779,7 @@ sum(unlist(lapply(predMotifs, function(x) x$name)) == unlist(lapply(trueMotifs, 
 dddGTrue <- list()
 dddGpred <- list()
 R2List <- c()
+varList <- c()
 for(i in 1:length(trueMotifs)){
   predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
   if(sum(predDiffTetra) == 0){
@@ -1517,8 +1804,11 @@ for(i in 1:length(trueMotifs)){
   dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
   dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
   #plotPredTrue(predTrue, main = paste0('FamilyCode rediction for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
-  R2List <- c(R2List, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  R2List <- c(R2List, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue), throughZero = T))
+  varList <- c(varList, mean(c(apply(frequency2ddG(trueDiffMatrix),2,function(x) max(abs(x))), apply(frequency2ddG(predDiffMatrix),2,function(x) max(abs(x))))))
 }
+
+
 trueMagnitudeAll <- c()
 predMagnitudeAll <- c()
 for(pos in motifPoses){
@@ -1547,7 +1837,9 @@ SampleInfo$allele[match] == mutationInfo$name[mutantID]
 matchSampleInfo <- SampleInfo[match,]
 ```
 
-```{r 6A, S10C}
+# Figure S9
+
+```{r 6A, S9C}
 # Create a data frame for plotting
 data <- data.frame(
   position = mutationInfo$position[mutantID]-1,
@@ -1651,6 +1943,7 @@ sum(unlist(lapply(predMotifs, function(x) x$name)) == unlist(lapply(trueMotifs, 
 dddGTrue <- list()
 dddGpred <- list()
 R2List_rCLAMPS <- c()
+varList_rCLAMPS <- c()
 for(i in 1:length(trueMotifs)){
   predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix[,motifPoses])
   if(sum(predDiffTetra) == 0){
@@ -1668,7 +1961,8 @@ for(i in 1:length(trueMotifs)){
   predTrue <- data.frame(true = true, pred = pred)
   dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
   dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
-  R2List_rCLAMPS <- c(R2List_rCLAMPS, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  R2List_rCLAMPS <- c(R2List_rCLAMPS, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue), throughZero = T))
+  varList_rCLAMPS <- c(varList_rCLAMPS, mean(c(apply(frequency2ddG(trueDiffMatrix),2,function(x) max(abs(x))), apply(frequency2ddG(predDiffMatrix),2,function(x) max(abs(x))))))
 }
 ```
 
@@ -1750,6 +2044,7 @@ sum(unlist(lapply(predMotifs, function(x) x$name)) == tolower(unlist(lapply(true
 dddGTrue <- list()
 dddGpred <- list()
 R2List_deepPBS <- c()
+varList_deepPBS <- c()
 for(i in 1:length(trueMotifs)){
   predDiffTetra <- matrix2tetrahedron(predMotifs[[i]]$matrix) - matrix2tetrahedron(trueStandard[[i]]$matrix)
   if(sum(predDiffTetra) == 0){
@@ -1767,7 +2062,8 @@ for(i in 1:length(trueMotifs)){
   predTrue <- data.frame(true = true, pred = pred)
   dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
   dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
-  R2List_deepPBS <- c(R2List_deepPBS, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  R2List_deepPBS <- c(R2List_deepPBS, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue), throughZero = T))
+  varList_deepPBS <- c(varList_deepPBS, mean(c(apply(frequency2ddG(trueDiffMatrix),2,function(x) max(abs(x))), apply(frequency2ddG(predDiffMatrix),2,function(x) max(abs(x))))))
 }
 ```
 
@@ -1775,62 +2071,68 @@ for(i in 1:length(trueMotifs)){
 library(ggplot2)
 library(ggpubr)
 
+
 rCmutpos <- 1:92
+sample_id <- rep(1:length(rCmutpos), times = 4)
+
 data <- data.frame(
   R2 = c(R2ListbaseLine[rCmutpos], R2List[rCmutpos], R2List_rCLAMPS[rCmutpos], R2List_deepPBS[rCmutpos]),
-  Group = factor(c(rep("Base Line", length(rCmutpos)), 
-                   rep("Family Code", length(rCmutpos)), 
+  Group = factor(c(rep("Replicates", length(rCmutpos)), 
+                   rep("FamilyCode", length(rCmutpos)), 
                    rep("rCLAMPS", length(rCmutpos)), 
-                   rep("deepPBS", length(rCmutpos))))
+                   rep("deepPBS", length(rCmutpos)))),
+  Sample = sample_id
 )
 
-data$Group <- factor(data$Group, levels = c('Base Line', 'Family Code', 'rCLAMPS', 'deepPBS'))
+data$Group <- factor(data$Group, levels = c('Replicates', 'FamilyCode', 'rCLAMPS', 'deepPBS'))
 
-# Custom colors for the groups
-custom_colors <- c('Base Line' = '#1f77b4', 
-                   'Family Code' = '#ff7f0e', 
+custom_colors <- c('Replicates' = '#1f77b4', 
+                   'FamilyCode' = '#ff7f0e', 
                    'rCLAMPS' = '#2ca02c', 
                    'deepPBS' = '#d61828')
 
-# Create violin plot with jittered points colored by group
-p <- ggplot(data, aes(x = Group, y = R2, fill = Group)) +
-  geom_violin(trim = FALSE, alpha = 0.6) +  # Violin plot
-  geom_jitter(aes(color = Group), shape = 16, size = 1.5, position = position_jitter(width = 0.02, height = 0), alpha = 1) + # Jitter points with matching colors
+p <- ggplot(data, aes(x = Group, y = R2, group = Sample)) +
+  # Add connecting grey lines
+  #geom_line(color = "grey70", alpha = 0.5, size = 0.3, aes(group = Sample)) +
+
+  # Add jittered points
+  geom_jitter(aes(color = Group), shape = 16, size = 2, 
+              position = position_jitter(width = 0.1, height = 0), alpha = 0.6) +
+
   labs(title = "ΔΔΔG/RT Prediction R^2 Comparison", y = "R^2s", x = "") +
-  scale_fill_manual(values = custom_colors) +  # Apply custom fill colors
-  scale_color_manual(values = custom_colors) + # Apply matching colors to jitter points
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
   theme_minimal() +
-  ylim(-0.5, 1.7) +
+  ylim(-0.2, 1.4) +
   theme(
-    legend.position = "bottom",        # Place legend at the bottom
-    legend.title = element_blank(),    # Remove legend title
-    panel.grid.major = element_blank(),# Remove major grid lines
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.border = element_blank(),    # Remove minor grid lines
-    panel.background = element_rect(fill = "white"), # White panel background
+    panel.border = element_blank(),
+    panel.background = element_rect(fill = "white"),
     plot.background = element_rect(color = "white"),
     plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
   )
 
-# Add significance bars with fixed vertical lines
+# Add significance bars
 p <- p + stat_compare_means(comparisons = list(
-                                               c("Family Code", "rCLAMPS"),
-                                               c("Family Code", "deepPBS"),
-                                               c('Base Line', "Family Code")),
+                                               c("FamilyCode", "rCLAMPS"),
+                                               c("FamilyCode", "deepPBS"),
+                                               c('Replicates', "FamilyCode")),
                             label = "p.signif",
                             method = "wilcox",
                             paired = TRUE,
-                            tip.length = 0.08, # Shorter vertical lines
+                            tip.length = 0.08,
                             bracket.size = 0.7,
-                            label.y= c(1.3,1.45,1.6)) +  # Thicker brackets for clarity
+                            label.y= c(1.2,1.325,1.45) - 0.2) +
   theme(legend.position = "none")
 
-# Print the plot
 plot(p)
+
 ```
 
-# Figure S10
-```{r S10A}
+```{r S9A}
 # Create a data frame for plotting
 data <- data.frame(
   position = mutationInfo$position[mutantID]-1,
@@ -1865,7 +2167,7 @@ ggplot(data, aes(x = factor(position), y = trueMagnitude, color = color_category
 wilcox.test(data$trueMagnitude[data$color_category != "Mutation has no effect"], data$trueMagnitude[data$color_category == "Mutation has no effect"])
 ```
 
-```{r S10B}
+```{r S9B}
 # Create a data frame for plotting
 data <- data.frame(
   position = mutationInfo$position[mutantID]-1,
@@ -1897,8 +2199,8 @@ ggplot(data, aes(x = factor(position), y = R2List, color = color_category)) +
   )
 ```
 
-# Figure S11
-```{r S11A-L}
+# Figure S10
+```{r S10A-L}
 mutantID <- which(mutationInfo$mutate != 'WT')
 WTID <- which(mutationInfo$mutate == 'WT')
 
@@ -1965,7 +2267,7 @@ for(i in 1:length(trueMotifs)){
   dddGTrue[[length(dddGTrue) + 1]] <- trueDiffMatrix
   dddGpred[[length(dddGpred) + 1]] <- predDiffMatrix
   #plotPredTrue(predTrue, main = paste0('FamilyCode rediction for ',unlist(lapply(trueMotifs, function(x) x$name))[i]), xlab = 'Experimental -ΔΔΔG/RT', ylab = 'Predicted -ΔΔΔG/RT')
-  R2List <- c(R2List, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  R2List <- c(R2List, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue), throughZero = T))
 }
 
 ids <- c(49,58,50,52)
@@ -2017,4 +2319,5 @@ for(i in ids){
 
 
 ```
+
 
