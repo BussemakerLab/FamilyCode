@@ -510,3 +510,160 @@ for(i in 1:8){
   }
 }
 ```
+
+# HD WT cross-validation with hamming distance threshold
+
+```{r}
+CV_alignment <- readRDS( paste0('intermediateData/HD/HD_SELEX_PBM_CV_alignment.rsd'))
+CV_motif <- readRDS( paste0('intermediateData/HD/HD_SELEX_PBM_CV_motif.rsd'))
+motifPoses <- c('N1','N2','T3','D4','A5','Y6','N7','N8') #c('P-3','P-2','P-1')
+library(Biostrings)
+
+# Convert to DNAStringSet
+aa_set <- AAStringSet(CV_alignment$alignment)
+
+# Compute pairwise Hamming distances
+dist_matrix <- stringDist(aa_set, method = "hamming")
+dist.matrix <- as.matrix(dist_matrix)
+step <- floor(min(apply(dist.matrix,2,max))/5)-1
+```
+
+
+```{r}
+# predicting for each distance treshold with FC
+FCR2 <- data.frame(NULL)
+for(t in 0:step){
+  R2ClusterFC <- data.frame(NULL)
+  all_pred_motifs <- list()
+  for(i in 1:nrow(dist.matrix)){
+    train_motifs <- CV_motif[dist.matrix[i,] > 5*t]
+    train_alignment <- CV_alignment[dist.matrix[i,] > 5*t,]
+    if(length(train_motifs) < 1){
+      next()
+    }
+    test_motifs <- CV_motif[i]
+    test_alignment <- CV_alignment[i,]
+    svdModel <- makeSVDModel(train_motifs, train_alignment, Positions = motifPoses)
+    #predict mutant
+    pred_motifs <- list()
+    for(j in 1:length(test_motifs)){
+      pred_matrix <- SVDmodelPredPSAM(svdModel,test_alignment$alignment[j])
+      pred_motifs[[length(pred_motifs)+1]] <- list(name = test_alignment$name[j], matrix = pred_matrix)
+    }
+    all_pred_motifs[length(all_pred_motifs)+1] <- pred_motifs[1]
+  }
+  R2s <- c()
+  for(pos in motifPoses){
+    predMatrix <- frequency2ddG(gene2pos(all_pred_motifs, pos))
+    testMatrix <- frequency2ddG(gene2pos(CV_motif, pos))
+    predTrue <- data.frame(true = as.numeric(testMatrix), pred = as.numeric(predMatrix))
+    #plotPredTrue(predTrue, main = paste0('FamilyCode prediction for cluster ',i,' at pos ', pos), xlab = 'Experimental -ΔΔG/RT', ylab = 'Predicted -ΔΔG/RT')
+    R2s <- c(R2s, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  }
+  R2ClusterFC <- rbind.data.frame(R2ClusterFC, R2s)
+  
+  colnames(R2ClusterFC) <- motifPoses
+  meanR2 <- apply(R2ClusterFC, 2, mean)
+  FCR2 <- rbind.data.frame(FCR2, meanR2)
+  print(t)
+}
+colnames(FCR2) <- motifPoses
+```
+
+
+```{r}
+# predicting for each distance treshold with CS
+CSR2 <- data.frame(NULL)
+for(t in 0:step){
+  R2Cluster <- data.frame(NULL)
+  all_pred_motifs <- list()
+  for(i in 1:nrow(dist.matrix)){
+    train_motifs <- CV_motif[dist.matrix[i,] > 5*t]
+    train_alignment <- CV_alignment[dist.matrix[i,] > 5*t,]
+    if(length(train_motifs) < 1){
+      next()
+    }
+    test_motifs <- CV_motif[i]
+    test_alignment <- CV_alignment[i,]
+    #predict mutant
+    pred_motifs <- list()
+    pred_motifs <- CSpredPSAM(test_alignment, train_motifs, train_alignment)
+    all_pred_motifs[length(all_pred_motifs)+1] <- pred_motifs[1]
+  }
+  R2s <- c()
+  for(pos in motifPoses){
+    predMatrix <- frequency2ddG(gene2pos(all_pred_motifs, pos))
+    testMatrix <- frequency2ddG(gene2pos(CV_motif, pos))
+    predTrue <- data.frame(true = as.numeric(testMatrix), pred = as.numeric(predMatrix))
+    #plotPredTrue(predTrue, main = paste0('FamilyCode prediction for cluster ',i,' at pos ', pos), xlab = 'Experimental -ΔΔG/RT', ylab = 'Predicted -ΔΔG/RT')
+    R2s <- c(R2s, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  }
+  R2Cluster <- rbind.data.frame(R2Cluster, R2s)
+  
+  colnames(R2Cluster) <- motifPoses
+  meanR2 <- apply(R2Cluster, 2, mean)
+  CSR2 <- rbind.data.frame(CSR2, meanR2)
+  print(t)
+}
+colnames(CSR2) <- motifPoses
+```
+
+
+```{r}
+# predicting for each distance treshold with SR
+SRR2 <- data.frame(NULL)
+isbHLH <- sum('P-1' == motifPoses) + sum('P1' == motifPoses) > 0
+if(isbHLH){
+  mod_alignment <- CV_alignment
+  mod_alignment$alignment <- paste0(substr(mod_alignment$alignment,1,34), '-','-',substr(mod_alignment$alignment,35,53))
+  wf <- 'rawData/bHLH/SimilarityRegression/F082_1.97d.json'
+}else{
+  mod_alignment <- CV_alignment
+  wf <- 'rawData/HD/SimilarityRegression/F223_1.97d.json'
+}
+for(t in 0:step){
+  R2Cluster <- data.frame(NULL)
+  all_pred_motifs <- list()
+  for(i in 1:nrow(dist.matrix)){
+    train_motifs <- CV_motif[dist.matrix[i,] > 5*t]
+    train_alignment <- mod_alignment[dist.matrix[i,] > 5*t,]
+    if(length(train_motifs) < 1){
+      next()
+    }
+    test_motifs <- CV_motif[i]
+    test_alignment <- mod_alignment[i,]
+    #predict mutant
+    pred_motifs <- list()
+    pred_motifs <- suppressWarnings(SRpredPSAM(test_alignment, train_motifs, train_alignment, weightfile = wf))
+    all_pred_motifs[length(all_pred_motifs)+1] <- pred_motifs[1]
+  }
+  R2s <- c()
+  for(pos in motifPoses){
+    predMatrix <- frequency2ddG(gene2pos(all_pred_motifs, pos))
+    testMatrix <- frequency2ddG(gene2pos(CV_motif, pos))
+    predTrue <- data.frame(true = as.numeric(testMatrix), pred = as.numeric(predMatrix))
+    #plotPredTrue(predTrue, main = paste0('FamilyCode prediction for cluster ',i,' at pos ', pos), xlab = 'Experimental -ΔΔG/RT', ylab = 'Predicted -ΔΔG/RT')
+    R2s <- c(R2s, groupedR2(predTrue$true, predTrue$pred, member = nrow(predTrue)))
+  }
+  R2Cluster <- rbind.data.frame(R2Cluster, R2s)
+  
+  colnames(R2Cluster) <- motifPoses
+  meanR2 <- apply(R2Cluster, 2, mean)
+  SRR2 <- rbind.data.frame(SRR2, meanR2)
+  print(t)
+}
+colnames(SRR2) <- motifPoses
+```
+
+```{r}
+HDR2s <- list(FCR2, CSR2, SRR2)
+saveRDS(HDR2s, 'HD_threshold_R2s.rds')
+
+
+pos <- 'N8'
+step = 8
+plot(0:step*5,HDR2s[[1]][,pos],  type = 'l', ylim = c(min(min(HDR2s[[1]]), min(HDR2s[[2]], min(HDR2s[[3]]))),max(max(HDR2s[[1]]), max(HDR2s[[2]], max(HDR2s[[3]])))), col = '#ff7f0e', ylab = 'mean R-square', xlab = 'hamming distance cutoff', main = paste0('predictions for HD motif position ',pos) , lwd = 3)
+lines(0:step*5,HDR2s[[2]][,pos], col = 'skyblue3', lwd = 3)
+lines(0:step*5,HDR2s[[3]][,pos], col = 'blue3', lwd = 3)
+#legend("topright", legend = c("Family Code", "Sequence Homology", "Similarity Regression"),col = c('#ff7f0e', 'skyblue3', 'blue3'), lty = 1, cex = 0.8, bty = 'n', lwd = 3)
+```
