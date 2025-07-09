@@ -28,15 +28,21 @@ FamilyCodeOnSELEX+PBM_HD.Rmd: Data processing using SELEX-seq and PBM data as in
 
 ## SUPPLEMENTAL DATA FILES
 
-Supplemental Data S1: DNA recognition models for the 52 bHLH factors analyzed in this study.
+Supplemental Data S1: JSON configuration file used for all ProBound analyses
 
-Supplemental Data S2: Interactive 3D representations of tetrahedrons. Open HTML files in browser to view and manipulate. Related to Figure 2A-C.
+Supplemental Data S2: DNA recognition models for the 52 bHLH factors analyzed in this study.
 
-Supplemental Data S3: Empirical cumulative distribution of tetrahedral position along each principal component direction for various amino-acid positions. Related to Figure 4B.
+Supplemental Data S3: Interactive 3D representations of tetrahedrons. Open HTML files in browser to view and manipulate. Related to Figure 1A-C.
 
-Supplemental Data S4: Statistical significance of ANOVA test of PCs at DNA position –2/+2 and –3/+3. Related to Figure 4C.
+Supplemental Data S4: Empirical cumulative distribution of tetrahedral position along each principal component direction for various amino-acid positions. Related to Figure 3B.
 
-Supplemental Data S5: JSON configuration file used for all ProBound analyses
+Supplemental Data S5: Statistical significance of ANOVA test of PCs at DNA position –2/+2 and –3/+3. Related to Figure 4C.
+
+Supplemental Data S6: DNA recognition models for the 414 HD factors analyzed in this study.
+
+Supplemental Data S7: Interactive 3D representations of tetrahedrons for HD examples. Open HTML files in browser to view and manipulate. Related to Figure 5B.
+
+
 
 
 
